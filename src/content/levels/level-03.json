@@ -1,0 +1,119 @@
+{
+  "id": "level-03",
+  "number": 3,
+  "title": "Map the whole LAN",
+  "summary": "More hosts appear. Fill the ledger, then ping a device you discovered.",
+  "comingSoon": false,
+  "unlocksAfter": "level-02",
+  "featuredCommands": ["ping", "arp-scan", "help", "clear"],
+  "topology": {
+    "subnets": [
+      {
+        "id": "lan",
+        "label": "Office LAN 10.0.0.0/24",
+        "x": 40,
+        "y": 50,
+        "w": 880,
+        "h": 430
+      }
+    ],
+    "devices": [
+      {
+        "id": "you",
+        "name": "Your PC",
+        "kind": "pc",
+        "ip": "10.0.0.10",
+        "mac": "aa:aa:aa:00:00:10",
+        "subnet": "10.0.0.0/24",
+        "x": 140,
+        "y": 320,
+        "isPlayer": true,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "router",
+        "name": "Gateway Router",
+        "kind": "router",
+        "ip": "10.0.0.1",
+        "mac": "aa:aa:aa:00:00:01",
+        "subnet": "10.0.0.0/24",
+        "x": 460,
+        "y": 120,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "alice",
+        "name": "Alice PC",
+        "kind": "pc",
+        "ip": "10.0.0.20",
+        "mac": "aa:aa:aa:00:00:20",
+        "subnet": "10.0.0.0/24",
+        "x": 300,
+        "y": 360,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "bob",
+        "name": "Bob PC",
+        "kind": "pc",
+        "ip": "10.0.0.30",
+        "mac": "aa:aa:aa:00:00:30",
+        "subnet": "10.0.0.0/24",
+        "x": 620,
+        "y": 360,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "printer",
+        "name": "Office Printer",
+        "kind": "iot",
+        "ip": "10.0.0.40",
+        "mac": "aa:aa:aa:00:00:40",
+        "subnet": "10.0.0.0/24",
+        "x": 780,
+        "y": 220,
+        "pingable": true,
+        "ports": [{ "number": 9100, "state": "open", "service": "print" }]
+      }
+    ],
+    "links": [
+      { "from": "you", "to": "router" },
+      { "from": "alice", "to": "router" },
+      { "from": "bob", "to": "router" },
+      { "from": "printer", "to": "router" }
+    ]
+  },
+  "cinematic": [
+    {
+      "delayMs": 400,
+      "text": "The LAN grew again. Bob and a printer joined Alice and the router.",
+      "highlightDeviceId": "bob"
+    },
+    {
+      "delayMs": 2200,
+      "text": "Good recon means a full list: every IP you can prove is real.",
+      "highlightDeviceId": "printer"
+    },
+    {
+      "delayMs": 2200,
+      "text": "Watch one hello visit Bob. Later you will scan everyone with arp-scan.",
+      "packet": { "src": "you", "dst": "bob", "proto": "icmp", "outcome": "success" }
+    },
+    {
+      "delayMs": 2400,
+      "text": "Use arp-scan --local, then ping 10.0.0.40. Old skills still work."
+    }
+  ],
+  "objectives": [
+    {
+      "id": "map-lan",
+      "text": "Discover Bob and the printer, then ping the printer.",
+      "requiredDeviceIds": ["bob", "printer"],
+      "requiredCommands": [{ "command": "ping", "targetDeviceId": "printer" }]
+    }
+  ]
+}

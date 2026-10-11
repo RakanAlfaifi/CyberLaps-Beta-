@@ -1,0 +1,143 @@
+{
+  "id": "level-06",
+  "number": 6,
+  "title": "A second subnet",
+  "summary": "The router now has another network behind it. Scan both sides.",
+  "comingSoon": false,
+  "unlocksAfter": "level-05",
+  "featuredCommands": ["ping", "arp-scan", "nmap", "help", "clear"],
+  "topology": {
+    "subnets": [
+      {
+        "id": "lan",
+        "label": "Staff LAN 10.0.0.0/24",
+        "x": 30,
+        "y": 50,
+        "w": 430,
+        "h": 430
+      },
+      {
+        "id": "srv",
+        "label": "Server LAN 10.0.1.0/24",
+        "x": 500,
+        "y": 50,
+        "w": 430,
+        "h": 430
+      }
+    ],
+    "devices": [
+      {
+        "id": "you",
+        "name": "Your PC",
+        "kind": "pc",
+        "ip": "10.0.0.10",
+        "mac": "aa:aa:aa:00:00:10",
+        "subnet": "10.0.0.0/24",
+        "x": 120,
+        "y": 340,
+        "isPlayer": true,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "alice",
+        "name": "Alice PC",
+        "kind": "pc",
+        "ip": "10.0.0.20",
+        "mac": "aa:aa:aa:00:00:20",
+        "subnet": "10.0.0.0/24",
+        "x": 250,
+        "y": 220,
+        "pingable": true,
+        "ports": [{ "number": 22, "state": "open", "service": "ssh" }]
+      },
+      {
+        "id": "bob",
+        "name": "Bob PC",
+        "kind": "pc",
+        "ip": "10.0.0.30",
+        "mac": "aa:aa:aa:00:00:30",
+        "subnet": "10.0.0.0/24",
+        "x": 180,
+        "y": 120,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "router",
+        "name": "Core Router",
+        "kind": "router",
+        "ip": "10.0.0.1",
+        "ips": ["10.0.1.1"],
+        "mac": "aa:aa:aa:00:00:01",
+        "subnet": "10.0.0.0/24",
+        "x": 480,
+        "y": 240,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "web",
+        "name": "Web Server",
+        "kind": "server",
+        "ip": "10.0.1.10",
+        "mac": "aa:aa:aa:10:00:10",
+        "subnet": "10.0.1.0/24",
+        "x": 720,
+        "y": 150,
+        "pingable": true,
+        "ports": [
+          { "number": 80, "state": "open", "service": "http" },
+          { "number": 443, "state": "open", "service": "https" }
+        ]
+      },
+      {
+        "id": "files",
+        "name": "File Server",
+        "kind": "server",
+        "ip": "10.0.1.20",
+        "mac": "aa:aa:aa:10:00:20",
+        "subnet": "10.0.1.0/24",
+        "x": 780,
+        "y": 340,
+        "pingable": true,
+        "ports": [{ "number": 21, "state": "open", "service": "ftp" }]
+      }
+    ],
+    "links": [
+      { "from": "you", "to": "router" },
+      { "from": "alice", "to": "router" },
+      { "from": "bob", "to": "router" },
+      { "from": "web", "to": "router" },
+      { "from": "files", "to": "router" }
+    ]
+  },
+  "cinematic": [
+    {
+      "delayMs": 400,
+      "text": "The router now sits in the middle. Left is your LAN. Right is a new server LAN.",
+      "highlightDeviceId": "router"
+    },
+    {
+      "delayMs": 2400,
+      "text": "Packets to 10.0.1.10 hop: you, then router, then the web server.",
+      "packet": { "src": "you", "dst": "web", "proto": "icmp", "outcome": "success" }
+    },
+    {
+      "delayMs": 2600,
+      "text": "arp-scan only sees local neighbors on 10.0.0.x. A ping can reach far servers, but only nmap reveals who they are.",
+      "highlightDeviceId": "web"
+    },
+    {
+      "delayMs": 2400,
+      "text": "Sweep the server LAN: nmap -sn 10.0.1.0/24. Keep using old LAN addresses too."
+    }
+  ],
+  "objectives": [
+    {
+      "id": "other-subnet",
+      "text": "Discover both servers on 10.0.1.0/24 with nmap.",
+      "requiredDeviceIds": ["web", "files"]
+    }
+  ]
+}

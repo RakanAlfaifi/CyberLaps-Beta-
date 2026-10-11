@@ -1,0 +1,162 @@
+{
+  "id": "level-07",
+  "number": 7,
+  "title": "The quiet firewall",
+  "summary": "Filtered ports do not send RST. They time out. Watch amber packets.",
+  "comingSoon": false,
+  "unlocksAfter": "level-06",
+  "featuredCommands": ["ping", "arp-scan", "nmap", "help", "clear"],
+  "topology": {
+    "subnets": [
+      {
+        "id": "lan",
+        "label": "Staff LAN 10.0.0.0/24",
+        "x": 30,
+        "y": 40,
+        "w": 360,
+        "h": 440
+      },
+      {
+        "id": "dmz",
+        "label": "Protected LAN 10.0.1.0/24",
+        "x": 520,
+        "y": 40,
+        "w": 410,
+        "h": 440
+      }
+    ],
+    "devices": [
+      {
+        "id": "you",
+        "name": "Your PC",
+        "kind": "pc",
+        "ip": "10.0.0.10",
+        "mac": "aa:aa:aa:00:00:10",
+        "subnet": "10.0.0.0/24",
+        "x": 120,
+        "y": 300,
+        "isPlayer": true,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "alice",
+        "name": "Alice PC",
+        "kind": "pc",
+        "ip": "10.0.0.20",
+        "mac": "aa:aa:aa:00:00:20",
+        "subnet": "10.0.0.0/24",
+        "x": 220,
+        "y": 140,
+        "pingable": true,
+        "ports": [{ "number": 22, "state": "open", "service": "ssh" }]
+      },
+      {
+        "id": "router",
+        "name": "Core Router",
+        "kind": "router",
+        "ip": "10.0.0.1",
+        "ips": ["10.0.1.1"],
+        "mac": "aa:aa:aa:00:00:01",
+        "subnet": "10.0.0.0/24",
+        "x": 430,
+        "y": 240,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "fw",
+        "name": "Firewall",
+        "kind": "firewall",
+        "ip": "10.0.1.2",
+        "mac": "aa:aa:aa:10:00:02",
+        "subnet": "10.0.1.0/24",
+        "x": 620,
+        "y": 240,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "web",
+        "name": "Web Server",
+        "kind": "server",
+        "ip": "10.0.1.10",
+        "mac": "aa:aa:aa:10:00:10",
+        "subnet": "10.0.1.0/24",
+        "x": 800,
+        "y": 140,
+        "pingable": true,
+        "ports": [
+          { "number": 80, "state": "open", "service": "http" },
+          { "number": 22, "state": "filtered" },
+          { "number": 3389, "state": "filtered" }
+        ]
+      },
+      {
+        "id": "files",
+        "name": "File Server",
+        "kind": "server",
+        "ip": "10.0.1.20",
+        "mac": "aa:aa:aa:10:00:20",
+        "subnet": "10.0.1.0/24",
+        "x": 800,
+        "y": 360,
+        "pingable": true,
+        "ports": [
+          { "number": 21, "state": "filtered" },
+          { "number": 80, "state": "closed" }
+        ]
+      }
+    ],
+    "links": [
+      { "from": "you", "to": "router" },
+      { "from": "alice", "to": "router" },
+      { "from": "router", "to": "fw" },
+      { "from": "fw", "to": "web" },
+      { "from": "fw", "to": "files" }
+    ]
+  },
+  "cinematic": [
+    {
+      "delayMs": 400,
+      "text": "A firewall now sits in front of the servers. It can drop packets with no reply.",
+      "highlightDeviceId": "fw"
+    },
+    {
+      "delayMs": 2400,
+      "text": "Port 80 on the web server still answers. Green path.",
+      "packet": {
+        "src": "you",
+        "dst": "web",
+        "proto": "tcp",
+        "dstPort": 80,
+        "outcome": "success"
+      }
+    },
+    {
+      "delayMs": 2600,
+      "text": "Port 22 is filtered. No RST. The packet waits, then times out in amber.",
+      "packet": {
+        "src": "you",
+        "dst": "web",
+        "proto": "tcp",
+        "dstPort": 22,
+        "outcome": "timeout"
+      }
+    },
+    {
+      "delayMs": 2400,
+      "text": "Scan 10.0.1.10 with nmap -p 22,80,3389. Silence is also a clue."
+    }
+  ],
+  "objectives": [
+    {
+      "id": "see-filter",
+      "text": "Learn that port 80 is open and port 22 is filtered on 10.0.1.10.",
+      "requiredPorts": [
+        { "deviceId": "web", "port": 80 },
+        { "deviceId": "web", "port": 22 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "levels": [
+    {
+      "id": "level-11",
+      "number": 11,
+      "title": "Packet crafting basics",
+      "summary": "Build simple packets by hand and watch how flags change.",
+      "comingSoon": true,
+      "unlocksAfter": "level-10",
+      "featuredCommands": [],
+      "topology": { "subnets": [], "devices": [], "links": [] },
+      "cinematic": [],
+      "objectives": []
+    },
+    {
+      "id": "level-12",
+      "number": 12,
+      "title": "Routing stories",
+      "summary": "Follow a packet across many routers.",
+      "comingSoon": true,
+      "unlocksAfter": "level-11",
+      "featuredCommands": [],
+      "topology": { "subnets": [], "devices": [], "links": [] },
+      "cinematic": [],
+      "objectives": []
+    },
+    {
+      "id": "level-13",
+      "number": 13,
+      "title": "DNS on the wire",
+      "summary": "See name lookups as moving packets.",
+      "comingSoon": true,
+      "unlocksAfter": "level-12",
+      "featuredCommands": [],
+      "topology": { "subnets": [], "devices": [], "links": [] },
+      "cinematic": [],
+      "objectives": []
+    },
+    {
+      "id": "level-14",
+      "number": 14,
+      "title": "VPN paths",
+      "summary": "A tunnel that hides a path between two networks.",
+      "comingSoon": true,
+      "unlocksAfter": "level-13",
+      "featuredCommands": [],
+      "topology": { "subnets": [], "devices": [], "links": [] },
+      "cinematic": [],
+      "objectives": []
+    },
+    {
+      "id": "level-15",
+      "number": 15,
+      "title": "Team recon",
+      "summary": "Share a ledger with a second practice seat.",
+      "comingSoon": true,
+      "unlocksAfter": "level-14",
+      "featuredCommands": [],
+      "topology": { "subnets": [], "devices": [], "links": [] },
+      "cinematic": [],
+      "objectives": []
+    }
+  ]
+}

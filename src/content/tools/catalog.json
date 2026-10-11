@@ -1,0 +1,60 @@
+{
+  "ping": {
+    "id": "ping",
+    "name": "ping",
+    "purpose": "Ask a device: are you online?",
+    "greeting": "Hi, I am ping. I ask one device a simple question: are you online?",
+    "howItWorks": [
+      "I send a tiny hello packet to the address you give me.",
+      "If the device is awake, it sends a hello back. The packet turns green.",
+      "If nobody answers, the packet turns amber. The device may be off, quiet, or the address may be wrong."
+    ],
+    "syntax": "ping <ip-address>",
+    "parts": [
+      { "token": "ping", "meaning": "My name. It tells the terminal to call me." },
+      { "token": "<ip-address>", "meaning": "The device to ask, for example 10.0.0.1." }
+    ],
+    "example": "ping 10.0.0.1",
+    "tip": "Want fewer hellos? Add -c and a number: ping -c 2 10.0.0.1",
+    "summary": "Ping sends a tiny test message. If the device answers, it is awake. If it does not answer, it may be off, hidden, or the address is wrong. Watch the moving packet to see where the message goes."
+  },
+  "arp-scan": {
+    "id": "arp-scan",
+    "name": "arp-scan",
+    "purpose": "Find neighbors on your local network.",
+    "greeting": "Hi, I am arp-scan. I find your neighbors: every device on your own small network.",
+    "howItWorks": [
+      "I ask everyone nearby the same question: who has this address?",
+      "Each neighbor answers with its IP address and its MAC address (its hardware ID).",
+      "I save everyone who answers in your Recon Ledger. I cannot see past the router."
+    ],
+    "syntax": "arp-scan --local",
+    "parts": [
+      { "token": "arp-scan", "meaning": "My name. It tells the terminal to call me." },
+      { "token": "--local", "meaning": "Ask every device on your own LAN." }
+    ],
+    "example": "arp-scan --local",
+    "tip": "I only reach your LAN. For devices behind the router, use ping.",
+    "summary": "This tool asks: who is next to me on this same small network? It learns each neighbor IP address and MAC address (the device hardware ID). It cannot see devices on a far subnet by itself."
+  },
+  "nmap": {
+    "id": "nmap",
+    "name": "nmap",
+    "purpose": "Check which doors (ports) are open on a device.",
+    "greeting": "Hi, I am nmap. I knock on a device's doors, called ports, to see which ones open.",
+    "howItWorks": [
+      "First I check that the device is awake.",
+      "Then I knock on each port you list. Green means open: a service is listening.",
+      "Red means closed: the device said no (RST). Amber means filtered: no answer at all, often a firewall."
+    ],
+    "syntax": "nmap -p <ports> <ip-address>",
+    "parts": [
+      { "token": "nmap", "meaning": "My name. It tells the terminal to call me." },
+      { "token": "-p <ports>", "meaning": "The doors to knock on, split by commas, for example -p 22,80." },
+      { "token": "<ip-address>", "meaning": "The device to check." }
+    ],
+    "example": "nmap -p 22,80 10.0.0.50",
+    "tip": "Click any moving packet to freeze time and read its headers.",
+    "summary": "A port is like a numbered door. Open means a service is listening. Closed means the device said no (RST). Filtered means no clear answer (often a firewall). Click a packet to pause and read the headers."
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "id": "level-05",
+  "number": 5,
+  "title": "Name the services",
+  "summary": "Open ports have jobs: HTTP, SSH, and more. Save names in the ledger.",
+  "comingSoon": false,
+  "unlocksAfter": "level-04",
+  "featuredCommands": ["ping", "arp-scan", "nmap", "help", "clear"],
+  "topology": {
+    "subnets": [
+      {
+        "id": "lan",
+        "label": "Office LAN 10.0.0.0/24",
+        "x": 40,
+        "y": 50,
+        "w": 880,
+        "h": 430
+      }
+    ],
+    "devices": [
+      {
+        "id": "you",
+        "name": "Your PC",
+        "kind": "pc",
+        "ip": "10.0.0.10",
+        "mac": "aa:aa:aa:00:00:10",
+        "subnet": "10.0.0.0/24",
+        "x": 120,
+        "y": 340,
+        "isPlayer": true,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "router",
+        "name": "Gateway Router",
+        "kind": "router",
+        "ip": "10.0.0.1",
+        "mac": "aa:aa:aa:00:00:01",
+        "subnet": "10.0.0.0/24",
+        "x": 380,
+        "y": 110,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "alice",
+        "name": "Alice PC",
+        "kind": "pc",
+        "ip": "10.0.0.20",
+        "mac": "aa:aa:aa:00:00:20",
+        "subnet": "10.0.0.0/24",
+        "x": 250,
+        "y": 380,
+        "pingable": true,
+        "ports": [{ "number": 22, "state": "open", "service": "ssh" }]
+      },
+      {
+        "id": "bob",
+        "name": "Bob PC",
+        "kind": "pc",
+        "ip": "10.0.0.30",
+        "mac": "aa:aa:aa:00:00:30",
+        "subnet": "10.0.0.0/24",
+        "x": 500,
+        "y": 380,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "printer",
+        "name": "Office Printer",
+        "kind": "iot",
+        "ip": "10.0.0.40",
+        "mac": "aa:aa:aa:00:00:40",
+        "subnet": "10.0.0.0/24",
+        "x": 680,
+        "y": 120,
+        "pingable": true,
+        "ports": [{ "number": 9100, "state": "open", "service": "print" }]
+      },
+      {
+        "id": "web",
+        "name": "Web Server",
+        "kind": "server",
+        "ip": "10.0.0.50",
+        "mac": "aa:aa:aa:00:00:50",
+        "subnet": "10.0.0.0/24",
+        "x": 800,
+        "y": 280,
+        "pingable": true,
+        "ports": [
+          { "number": 80, "state": "open", "service": "http" },
+          { "number": 443, "state": "open", "service": "https" },
+          { "number": 22, "state": "open", "service": "ssh" },
+          { "number": 21, "state": "closed" }
+        ]
+      }
+    ],
+    "links": [
+      { "from": "you", "to": "router" },
+      { "from": "alice", "to": "router" },
+      { "from": "bob", "to": "router" },
+      { "from": "printer", "to": "router" },
+      { "from": "web", "to": "router" }
+    ]
+  },
+  "cinematic": [
+    {
+      "delayMs": 400,
+      "text": "The same web server now shows more doors. A service name tells you the job.",
+      "highlightDeviceId": "web"
+    },
+    {
+      "delayMs": 2400,
+      "text": "Port 443 is HTTPS: a safer web door. Watch a green answer.",
+      "packet": {
+        "src": "you",
+        "dst": "web",
+        "proto": "tcp",
+        "dstPort": 443,
+        "outcome": "success"
+      }
+    },
+    {
+      "delayMs": 2400,
+      "text": "Port 22 is SSH: a remote login door. Alice also has SSH.",
+      "highlightDeviceId": "alice"
+    },
+    {
+      "delayMs": 2200,
+      "text": "Scan the web server with nmap -p 21,22,80,443 10.0.0.50 and read the names."
+    }
+  ],
+  "objectives": [
+    {
+      "id": "name-services",
+      "text": "Find HTTP and SSH on the web server.",
+      "requiredPorts": [
+        { "deviceId": "web", "port": 80 },
+        { "deviceId": "web", "port": 22 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "id": "level-08",
+  "number": 8,
+  "title": "Quiet but alive",
+  "summary": "One host ignores ping but still has an open port. Discovery is more than ping.",
+  "comingSoon": false,
+  "unlocksAfter": "level-07",
+  "featuredCommands": ["ping", "arp-scan", "nmap", "help", "clear"],
+  "topology": {
+    "subnets": [
+      {
+        "id": "lan",
+        "label": "Staff LAN 10.0.0.0/24",
+        "x": 30,
+        "y": 40,
+        "w": 360,
+        "h": 440
+      },
+      {
+        "id": "dmz",
+        "label": "Protected LAN 10.0.1.0/24",
+        "x": 520,
+        "y": 40,
+        "w": 410,
+        "h": 440
+      }
+    ],
+    "devices": [
+      {
+        "id": "you",
+        "name": "Your PC",
+        "kind": "pc",
+        "ip": "10.0.0.10",
+        "mac": "aa:aa:aa:00:00:10",
+        "subnet": "10.0.0.0/24",
+        "x": 110,
+        "y": 280,
+        "isPlayer": true,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "alice",
+        "name": "Alice PC",
+        "kind": "pc",
+        "ip": "10.0.0.20",
+        "mac": "aa:aa:aa:00:00:20",
+        "subnet": "10.0.0.0/24",
+        "x": 230,
+        "y": 140,
+        "pingable": true,
+        "ports": [{ "number": 22, "state": "open", "service": "ssh" }]
+      },
+      {
+        "id": "stealth",
+        "name": "Quiet Host",
+        "kind": "pc",
+        "ip": "10.0.0.77",
+        "mac": "aa:aa:aa:00:00:77",
+        "subnet": "10.0.0.0/24",
+        "x": 200,
+        "y": 400,
+        "pingable": false,
+        "ports": [{ "number": 80, "state": "open", "service": "http" }]
+      },
+      {
+        "id": "router",
+        "name": "Core Router",
+        "kind": "router",
+        "ip": "10.0.0.1",
+        "ips": ["10.0.1.1"],
+        "mac": "aa:aa:aa:00:00:01",
+        "subnet": "10.0.0.0/24",
+        "x": 430,
+        "y": 240,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "fw",
+        "name": "Firewall",
+        "kind": "firewall",
+        "ip": "10.0.1.2",
+        "mac": "aa:aa:aa:10:00:02",
+        "subnet": "10.0.1.0/24",
+        "x": 620,
+        "y": 240,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "web",
+        "name": "Web Server",
+        "kind": "server",
+        "ip": "10.0.1.10",
+        "mac": "aa:aa:aa:10:00:10",
+        "subnet": "10.0.1.0/24",
+        "x": 800,
+        "y": 150,
+        "pingable": true,
+        "ports": [
+          { "number": 80, "state": "open", "service": "http" },
+          { "number": 22, "state": "filtered" }
+        ]
+      },
+      {
+        "id": "files",
+        "name": "File Server",
+        "kind": "server",
+        "ip": "10.0.1.20",
+        "mac": "aa:aa:aa:10:00:20",
+        "subnet": "10.0.1.0/24",
+        "x": 800,
+        "y": 360,
+        "pingable": true,
+        "ports": [{ "number": 21, "state": "filtered" }]
+      }
+    ],
+    "links": [
+      { "from": "you", "to": "router" },
+      { "from": "alice", "to": "router" },
+      { "from": "stealth", "to": "router" },
+      { "from": "router", "to": "fw" },
+      { "from": "fw", "to": "web" },
+      { "from": "fw", "to": "files" }
+    ]
+  },
+  "cinematic": [
+    {
+      "delayMs": 400,
+      "text": "A new host sits on your LAN at 10.0.0.77. Ping it during the intro. It stays quiet.",
+      "highlightDeviceId": "stealth",
+      "packet": { "src": "you", "dst": "stealth", "proto": "icmp", "outcome": "timeout" }
+    },
+    {
+      "delayMs": 2800,
+      "text": "Quiet ping does not mean empty. Watch a port 80 knock get a green reply.",
+      "packet": {
+        "src": "you",
+        "dst": "stealth",
+        "proto": "tcp",
+        "dstPort": 80,
+        "outcome": "success"
+      }
+    },
+    {
+      "delayMs": 2600,
+      "text": "arp-scan can still list it as a neighbor. Then nmap -p 80 10.0.0.77 to prove it is alive."
+    }
+  ],
+  "objectives": [
+    {
+      "id": "quiet-host",
+      "text": "Find the quiet host and prove port 80 is open.",
+      "requiredDeviceIds": ["stealth"],
+      "requiredPorts": [{ "deviceId": "stealth", "port": 80 }]
+    }
+  ]
+}

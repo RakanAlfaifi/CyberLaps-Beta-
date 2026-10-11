@@ -1,0 +1,198 @@
+{
+  "id": "level-10",
+  "number": 10,
+  "title": "Full recon",
+  "summary": "Three subnets. Use every tool. Wrong IPs still animate so you can learn.",
+  "comingSoon": false,
+  "unlocksAfter": "level-09",
+  "featuredCommands": ["ping", "arp-scan", "nmap", "help", "clear"],
+  "topology": {
+    "subnets": [
+      {
+        "id": "lan",
+        "label": "Staff 10.0.0.0/24",
+        "x": 16,
+        "y": 36,
+        "w": 280,
+        "h": 450
+      },
+      {
+        "id": "dmz",
+        "label": "Servers 10.0.1.0/24",
+        "x": 330,
+        "y": 36,
+        "w": 300,
+        "h": 450
+      },
+      {
+        "id": "corp",
+        "label": "Records 10.0.2.0/24",
+        "x": 660,
+        "y": 36,
+        "w": 284,
+        "h": 450
+      }
+    ],
+    "devices": [
+      {
+        "id": "you",
+        "name": "Your PC",
+        "kind": "pc",
+        "ip": "10.0.0.10",
+        "mac": "aa:aa:aa:00:00:10",
+        "subnet": "10.0.0.0/24",
+        "x": 90,
+        "y": 320,
+        "isPlayer": true,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "alice",
+        "name": "Alice PC",
+        "kind": "pc",
+        "ip": "10.0.0.20",
+        "mac": "aa:aa:aa:00:00:20",
+        "subnet": "10.0.0.0/24",
+        "x": 180,
+        "y": 140,
+        "pingable": true,
+        "ports": [{ "number": 22, "state": "open", "service": "ssh" }]
+      },
+      {
+        "id": "stealth",
+        "name": "Quiet Host",
+        "kind": "pc",
+        "ip": "10.0.0.77",
+        "mac": "aa:aa:aa:00:00:77",
+        "subnet": "10.0.0.0/24",
+        "x": 170,
+        "y": 420,
+        "pingable": false,
+        "ports": [{ "number": 80, "state": "open", "service": "http" }]
+      },
+      {
+        "id": "router",
+        "name": "Core Router",
+        "kind": "router",
+        "ip": "10.0.0.1",
+        "ips": ["10.0.1.1", "10.0.2.1"],
+        "mac": "aa:aa:aa:00:00:01",
+        "subnet": "10.0.0.0/24",
+        "x": 310,
+        "y": 250,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "web",
+        "name": "Web Server",
+        "kind": "server",
+        "ip": "10.0.1.10",
+        "mac": "aa:aa:aa:10:00:10",
+        "subnet": "10.0.1.0/24",
+        "x": 430,
+        "y": 120,
+        "pingable": true,
+        "ports": [
+          { "number": 80, "state": "open", "service": "http" },
+          { "number": 443, "state": "open", "service": "https" },
+          { "number": 22, "state": "filtered" }
+        ]
+      },
+      {
+        "id": "dns",
+        "name": "DNS Server",
+        "kind": "server",
+        "ip": "10.0.1.53",
+        "mac": "aa:aa:aa:10:00:53",
+        "subnet": "10.0.1.0/24",
+        "x": 520,
+        "y": 250,
+        "pingable": true,
+        "ports": [{ "number": 53, "state": "open", "service": "dns" }]
+      },
+      {
+        "id": "files",
+        "name": "File Server",
+        "kind": "server",
+        "ip": "10.0.1.20",
+        "mac": "aa:aa:aa:10:00:20",
+        "subnet": "10.0.1.0/24",
+        "x": 450,
+        "y": 400,
+        "pingable": true,
+        "ports": [{ "number": 21, "state": "open", "service": "ftp" }]
+      },
+      {
+        "id": "records",
+        "name": "Records Server",
+        "kind": "server",
+        "ip": "10.0.2.15",
+        "mac": "aa:aa:aa:20:00:15",
+        "subnet": "10.0.2.0/24",
+        "x": 780,
+        "y": 180,
+        "pingable": true,
+        "ports": [
+          { "number": 389, "state": "open", "service": "ldap" },
+          { "number": 88, "state": "filtered" }
+        ]
+      },
+      {
+        "id": "backup",
+        "name": "Backup Server",
+        "kind": "server",
+        "ip": "10.0.2.40",
+        "mac": "aa:aa:aa:20:00:40",
+        "subnet": "10.0.2.0/24",
+        "x": 800,
+        "y": 360,
+        "pingable": true,
+        "ports": [{ "number": 22, "state": "open", "service": "ssh" }]
+      }
+    ],
+    "links": [
+      { "from": "you", "to": "router" },
+      { "from": "alice", "to": "router" },
+      { "from": "stealth", "to": "router" },
+      { "from": "web", "to": "router" },
+      { "from": "dns", "to": "router" },
+      { "from": "files", "to": "router" },
+      { "from": "records", "to": "router" },
+      { "from": "backup", "to": "router" }
+    ]
+  },
+  "cinematic": [
+    {
+      "delayMs": 400,
+      "text": "This is the full practice map: staff, servers, and records. Everything you learned is here.",
+      "highlightDeviceId": "router"
+    },
+    {
+      "delayMs": 2400,
+      "text": "A packet to 10.0.2.15 crosses the router into the new records network.",
+      "packet": { "src": "you", "dst": "records", "proto": "icmp", "outcome": "success" }
+    },
+    {
+      "delayMs": 2600,
+      "text": "Try a wrong address like ping 10.9.9.9. You will still see the packet walk, then stop.",
+      "highlightDeviceId": "router"
+    },
+    {
+      "delayMs": 2400,
+      "text": "Map local neighbors, then scan 10.0.2.15 and 10.0.2.40. Use your ledger."
+    }
+  ],
+  "objectives": [
+    {
+      "id": "full-recon",
+      "text": "Discover the records server and backup server, including LDAP and SSH.",
+      "requiredDeviceIds": ["records", "backup"],
+      "requiredPorts": [
+        { "deviceId": "records", "port": 389 },
+        { "deviceId": "backup", "port": 22 }
+      ]
+    }
+  ]
+}

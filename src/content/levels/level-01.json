@@ -1,0 +1,79 @@
+{
+  "id": "level-01",
+  "number": 1,
+  "title": "Meet your network",
+  "summary": "See one computer and one router. Send a ping to the gateway.",
+  "comingSoon": false,
+  "unlocksAfter": null,
+  "newTool": "ping",
+  "featuredCommands": ["ping", "help", "clear"],
+  "topology": {
+    "subnets": [
+      {
+        "id": "lan",
+        "label": "Home LAN 10.0.0.0/24",
+        "x": 80,
+        "y": 70,
+        "w": 800,
+        "h": 380
+      }
+    ],
+    "devices": [
+      {
+        "id": "you",
+        "name": "Your PC",
+        "kind": "pc",
+        "ip": "10.0.0.10",
+        "mac": "aa:aa:aa:00:00:10",
+        "subnet": "10.0.0.0/24",
+        "x": 220,
+        "y": 280,
+        "isPlayer": true,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "router",
+        "name": "Gateway Router",
+        "kind": "router",
+        "ip": "10.0.0.1",
+        "mac": "aa:aa:aa:00:00:01",
+        "subnet": "10.0.0.0/24",
+        "x": 620,
+        "y": 180,
+        "pingable": true,
+        "ports": []
+      }
+    ],
+    "links": [{ "from": "you", "to": "router" }]
+  },
+  "cinematic": [
+    {
+      "delayMs": 400,
+      "text": "This is a tiny network. You are the computer on the left.",
+      "highlightDeviceId": "you"
+    },
+    {
+      "delayMs": 2200,
+      "text": "The box on the right is a router. It is the door to other networks. Its IP is 10.0.0.1.",
+      "highlightDeviceId": "router"
+    },
+    {
+      "delayMs": 2400,
+      "text": "A ping is a tiny hello. Watch a hello go to the router and come back.",
+      "highlightDeviceId": "router",
+      "packet": { "src": "you", "dst": "router", "proto": "icmp", "outcome": "success" }
+    },
+    {
+      "delayMs": 2600,
+      "text": "Green means the device answered. Now you try: ping 10.0.0.1"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "ping-router",
+      "text": "Ping the router at 10.0.0.1 and see a green reply.",
+      "requiredCommands": [{ "command": "ping", "targetDeviceId": "router" }]
+    }
+  ]
+}

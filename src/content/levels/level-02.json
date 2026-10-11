@@ -1,0 +1,99 @@
+{
+  "id": "level-02",
+  "number": 2,
+  "title": "Find a neighbor",
+  "summary": "A second computer joins the LAN. Use arp-scan to learn its IP and MAC.",
+  "comingSoon": false,
+  "unlocksAfter": "level-01",
+  "newTool": "arp-scan",
+  "featuredCommands": ["ping", "arp-scan", "help", "clear"],
+  "topology": {
+    "subnets": [
+      {
+        "id": "lan",
+        "label": "Home LAN 10.0.0.0/24",
+        "x": 70,
+        "y": 60,
+        "w": 820,
+        "h": 400
+      }
+    ],
+    "devices": [
+      {
+        "id": "you",
+        "name": "Your PC",
+        "kind": "pc",
+        "ip": "10.0.0.10",
+        "mac": "aa:aa:aa:00:00:10",
+        "subnet": "10.0.0.0/24",
+        "x": 180,
+        "y": 300,
+        "isPlayer": true,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "router",
+        "name": "Gateway Router",
+        "kind": "router",
+        "ip": "10.0.0.1",
+        "mac": "aa:aa:aa:00:00:01",
+        "subnet": "10.0.0.0/24",
+        "x": 480,
+        "y": 140,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "alice",
+        "name": "Alice PC",
+        "kind": "pc",
+        "ip": "10.0.0.20",
+        "mac": "aa:aa:aa:00:00:20",
+        "subnet": "10.0.0.0/24",
+        "x": 760,
+        "y": 300,
+        "pingable": true,
+        "ports": []
+      }
+    ],
+    "links": [
+      { "from": "you", "to": "router" },
+      { "from": "alice", "to": "router" }
+    ]
+  },
+  "cinematic": [
+    {
+      "delayMs": 400,
+      "text": "The old devices are still here. Networks grow. They do not reset.",
+      "highlightDeviceId": "you"
+    },
+    {
+      "delayMs": 2200,
+      "text": "A neighbor named Alice joined the same LAN. You can see her, but you still need her addresses.",
+      "highlightDeviceId": "alice"
+    },
+    {
+      "delayMs": 2400,
+      "text": "arp-scan asks everyone nearby: what is your IP and your MAC (hardware ID)?",
+      "packet": { "src": "you", "dst": "alice", "proto": "arp", "outcome": "success" }
+    },
+    {
+      "delayMs": 2400,
+      "text": "Try arp-scan --local. Then ping Alice using the IP you find."
+    }
+  ],
+  "objectives": [
+    {
+      "id": "find-alice",
+      "text": "Run arp-scan --local and save Alice in the ledger.",
+      "requiredCommands": [{ "command": "arp-scan" }],
+      "requiredDeviceIds": ["alice"]
+    },
+    {
+      "id": "ping-alice",
+      "text": "Ping Alice using the IP you found.",
+      "requiredCommands": [{ "command": "ping", "targetDeviceId": "alice" }]
+    }
+  ]
+}

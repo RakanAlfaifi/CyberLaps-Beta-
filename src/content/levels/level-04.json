@@ -1,0 +1,147 @@
+{
+  "id": "level-04",
+  "number": 4,
+  "title": "Knock on doors",
+  "summary": "Meet nmap. Open ports answer. Closed ports send RST.",
+  "comingSoon": false,
+  "unlocksAfter": "level-03",
+  "newTool": "nmap",
+  "featuredCommands": ["ping", "arp-scan", "nmap", "help", "clear"],
+  "topology": {
+    "subnets": [
+      {
+        "id": "lan",
+        "label": "Office LAN 10.0.0.0/24",
+        "x": 40,
+        "y": 50,
+        "w": 880,
+        "h": 430
+      }
+    ],
+    "devices": [
+      {
+        "id": "you",
+        "name": "Your PC",
+        "kind": "pc",
+        "ip": "10.0.0.10",
+        "mac": "aa:aa:aa:00:00:10",
+        "subnet": "10.0.0.0/24",
+        "x": 130,
+        "y": 330,
+        "isPlayer": true,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "router",
+        "name": "Gateway Router",
+        "kind": "router",
+        "ip": "10.0.0.1",
+        "mac": "aa:aa:aa:00:00:01",
+        "subnet": "10.0.0.0/24",
+        "x": 400,
+        "y": 120,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "alice",
+        "name": "Alice PC",
+        "kind": "pc",
+        "ip": "10.0.0.20",
+        "mac": "aa:aa:aa:00:00:20",
+        "subnet": "10.0.0.0/24",
+        "x": 280,
+        "y": 370,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "bob",
+        "name": "Bob PC",
+        "kind": "pc",
+        "ip": "10.0.0.30",
+        "mac": "aa:aa:aa:00:00:30",
+        "subnet": "10.0.0.0/24",
+        "x": 520,
+        "y": 370,
+        "pingable": true,
+        "ports": []
+      },
+      {
+        "id": "printer",
+        "name": "Office Printer",
+        "kind": "iot",
+        "ip": "10.0.0.40",
+        "mac": "aa:aa:aa:00:00:40",
+        "subnet": "10.0.0.0/24",
+        "x": 700,
+        "y": 140,
+        "pingable": true,
+        "ports": [{ "number": 9100, "state": "open", "service": "print" }]
+      },
+      {
+        "id": "web",
+        "name": "Web Server",
+        "kind": "server",
+        "ip": "10.0.0.50",
+        "mac": "aa:aa:aa:00:00:50",
+        "subnet": "10.0.0.0/24",
+        "x": 800,
+        "y": 300,
+        "pingable": true,
+        "ports": [
+          { "number": 80, "state": "open", "service": "http" },
+          { "number": 22, "state": "closed" }
+        ]
+      }
+    ],
+    "links": [
+      { "from": "you", "to": "router" },
+      { "from": "alice", "to": "router" },
+      { "from": "bob", "to": "router" },
+      { "from": "printer", "to": "router" },
+      { "from": "web", "to": "router" }
+    ]
+  },
+  "cinematic": [
+    {
+      "delayMs": 400,
+      "text": "A web server joined the LAN at 10.0.0.50. Ping only says it is awake.",
+      "highlightDeviceId": "web"
+    },
+    {
+      "delayMs": 2400,
+      "text": "Ports are numbered doors. Watch a green hello on port 80 (web).",
+      "packet": {
+        "src": "you",
+        "dst": "web",
+        "proto": "tcp",
+        "dstPort": 80,
+        "outcome": "success"
+      }
+    },
+    {
+      "delayMs": 2600,
+      "text": "Now a closed door. Port 22 says no with RST. The packet turns red.",
+      "packet": {
+        "src": "you",
+        "dst": "web",
+        "proto": "tcp",
+        "dstPort": 22,
+        "outcome": "rst"
+      }
+    },
+    {
+      "delayMs": 2400,
+      "text": "Your turn: nmap -p 22,80 10.0.0.50  Click a packet to pause and read it."
+    }
+  ],
+  "objectives": [
+    {
+      "id": "scan-web",
+      "text": "Scan 10.0.0.50 and learn that port 80 is open.",
+      "requiredPorts": [{ "deviceId": "web", "port": 80 }]
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/cairo";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/600.css";
+@import "@xterm/xterm/css/xterm.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-void text-ink font-sans;
+  }
+
+  /* Arabic letters join; letter-spacing tears the words apart. */
+  [dir="rtl"] [class*="tracking-"]:not([dir="ltr"] *) {
+    letter-spacing: normal;
+  }
+
+  [dir="rtl"] body {
+    line-height: 1.65;
+  }
+
+  /* Visible keyboard focus for accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-cyber-blue ring-offset-2 ring-offset-void;
+  }
+
+  /* Respect users who prefer less motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .text-glow-emerald {
+    text-shadow: 0 0 18px rgba(16, 185, 129, 0.55);
+  }
+  .text-glow-blue {
+    text-shadow: 0 0 18px rgba(59, 130, 246, 0.55);
+  }
+  .clip-corner {
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  }
+}
