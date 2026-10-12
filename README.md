@@ -1,4 +1,4 @@
-# CyberLaps
+# CyberLaps(Beta)     Last updated (October 12, 2026)
 
 Interactive Cyber Defense & Systems Security Learning. A local teaching lab: you watch packets move, read them layer by layer, type simple commands, and save what you find.
 
