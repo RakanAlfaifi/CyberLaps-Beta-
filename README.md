@@ -9,7 +9,9 @@ This is a simulation. It does not scan real networks.
 in the terminal :
 1-  (```bash git clone [https://github.com/RakanAlfaifi/CyberLaps-beta-.git](https://github.com/RakanAlfaifi/CyberLaps-beta-.git) cd CyberLaps-beta-)
 
-2- npm install (Note: If an error regarding PowerShell permissions appears, run the following command first: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser ) 
+2- npm install
+
+(Note: If an error regarding PowerShell permissions appears, run the following command first: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser ) 
 
 3-npm run dev
 
@@ -18,9 +20,9 @@ in the terminal :
 
 # CyberLaps 🛡️
 
-> **Understand every packet. Defend every system.**[cite: 4]
+> **Understand every packet. Defend every system.**
 
-CyberLaps is an interactive cybersecurity education platform designed to teach defensive tactics and system security through real-time, in-browser simulations[cite: 2, 4]. It offers a safe, isolated laboratory environment without requiring any connection to actual networks[cite: 4].
+CyberLaps is an interactive cybersecurity education platform designed to teach defensive tactics and system security through real-time, in-browser simulations. It offers a safe, isolated laboratory environment without requiring any connection to actual networks.
 
 ---
 
@@ -38,32 +40,32 @@ CyberLaps is an interactive cybersecurity education platform designed to teach d
 
 The platform follows a structured **3-Step Learning Approach**:
 
-| Step     | Mode            | Description 
-
-| **01** | **Watch** 👁️ | Observe animated packet flows and network topology changes on the visual stage.    |
-| **02** | **Learn** 📖 | Read concise breakdowns of tools, protocols, and header properties.                |
-| **03** | **Apply** 🛠️ | Practice directly inside the Smart CLI to achieve level objectives.                |
+| Step | Mode | Description |
+| :--- | :--- | :--- |
+| **01** | **Watch** 👁️ | Observe animated packet flows and network topology changes on the visual stage. |
+| **02** | **Learn** 📖 | Read concise breakdowns of tools, protocols, and header properties. |
+| **03** | **Apply** 🛠️ | Practice directly inside the Smart CLI to achieve level objectives. |
 
 ---
 
-## 📚 Educational Modules
+## 🎨 Educational Modules
 
 ### 🟢 Active Module
 
-#### **Reconnaissance & Information Gathering** (10 Levels)[cite: 3, 4]
-Discover active hosts, open ports, and running services across local networks[cite: 3].
-* **Core Tools:** `ping`, `arp-scan`, `nmap`[cite: 3, 4]
+#### **Reconnaissance & Information Gathering** (10 Levels)
+Discover active hosts, open ports, and running services across local networks.
+* **Core Tools:** `ping`, `arp-scan`, `nmap`
 
 ---
 
-### 🟡 Coming Soon Modules[cite: 3]
+### 🟡 Coming Soon Modules
 
-  | Module                     | Focus Areas 
-
-| **Network Security** 🌐 | Firewalls, network segmentation, and monitoring malicious traffic.            |
-| **System Security** ⚙️  | Host hardening, access control management, and privilege escalation defense.  |
-| **Cryptography** 🔑     | Hashing functions, symmetric/asymmetric encryption, and weakness analysis.    |
-| **Web Security** 🕸️     | HTTP request analysis, session/cookie handling, and vulnerability patching.   |
+| Module | Focus Areas |
+| :--- | :--- |
+| **Network Security** 🌐 | Firewalls, network segmentation, and monitoring malicious traffic. |
+| **System Security** ⚙️ | Host hardening, access control management, and privilege escalation defense. |
+| **Cryptography** 🔑 | Hashing functions, symmetric/asymmetric encryption, and weakness analysis. |
+| **Web Security** 🕸️ | HTTP request analysis, session/cookie handling, and vulnerability patching. |
 
 ---
 
