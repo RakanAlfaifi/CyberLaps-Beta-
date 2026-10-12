@@ -6,30 +6,67 @@ This is a simulation. It does not scan real networks.
 
 ## Run it
 
-```bash
-npm install
-npm run dev
-```
+in the terminal :
+1-  (```bash git clone [https://github.com/RakanAlfaifi/CyberLaps-beta-.git](https://github.com/RakanAlfaifi/CyberLaps-beta-.git) cd CyberLaps-beta-)
 
-Open the URL Vite prints. Start with Network Lab, Level 1.
+2- npm install (Note: If an error regarding PowerShell permissions appears, run the following command first: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser ) 
+
+3-npm run dev
+
 
 ## What you can do
 
-- Step through a short intro in each level at your own pace with **Next step**
-- Read a deeper lesson per level: packet structure, protocol behavior, and the defender's view
-- Meet each new tool: the Lab Agent lets `ping`, `arp-scan`, and `nmap` explain themselves
-- Use those tools in the terminal
-- Click a moving packet to pause and read its headers
-- Keep a ledger of discovered devices in this browser
-- Switch the whole interface, lessons and guides between English and Arabic (right-to-left)
-- Sign in or register a local demo account (nothing leaves the browser; passwords are never stored)
+# CyberLaps 🛡️
 
-Every device on the map starts as an unverified **?** node. Its type, name, IP, MAC and services appear only after one of your discovery commands gets a valid reply in that level.
+> **Understand every packet. Defend every system.**[cite: 4]
 
-Each level has goals. They tick off by themselves when your commands prove them, and a level is complete only when every goal is proven. Finishing a level opens the next one. Pick any open level from the level map in the top bar.
+CyberLaps is an interactive cybersecurity education platform designed to teach defensive tactics and system security through real-time, in-browser simulations[cite: 2, 4]. It offers a safe, isolated laboratory environment without requiring any connection to actual networks[cite: 4].
 
-Levels 1 to 10 are playable. Levels 11+ and other training areas are marked Coming Soon.
+---
 
-The terminal itself stays in English, like the real tools it imitates.
+## 🌟 Key Features
+
+- **Interactive Visual Theater:** Trace and visualize network packets and device interactions in real-time.
+- **Smart CLI:** Integrated terminal for hands-on execution of security commands.
+- **Safe Environment:** 100% simulated, isolated sandbox learning.
+- **Bilingual UI:** Native support for both English and Arabic.
+- **Gamified Experience:** Track progress, unlock achievements, and customize audio settings.
+
+---
+
+## 🛣️ Learning Methodology
+
+The platform follows a structured **3-Step Learning Approach**:
+
+| Step     | Mode            | Description 
+
+| **01** | **Watch** 👁️ | Observe animated packet flows and network topology changes on the visual stage.    |
+| **02** | **Learn** 📖 | Read concise breakdowns of tools, protocols, and header properties.                |
+| **03** | **Apply** 🛠️ | Practice directly inside the Smart CLI to achieve level objectives.                |
+
+---
+
+## 📚 Educational Modules
+
+### 🟢 Active Module
+
+#### **Reconnaissance & Information Gathering** (10 Levels)[cite: 3, 4]
+Discover active hosts, open ports, and running services across local networks[cite: 3].
+* **Core Tools:** `ping`, `arp-scan`, `nmap`[cite: 3, 4]
+
+---
+
+### 🟡 Coming Soon Modules[cite: 3]
+
+  | Module                     | Focus Areas 
+
+| **Network Security** 🌐 | Firewalls, network segmentation, and monitoring malicious traffic.            |
+| **System Security** ⚙️  | Host hardening, access control management, and privilege escalation defense.  |
+| **Cryptography** 🔑     | Hashing functions, symmetric/asymmetric encryption, and weakness analysis.    |
+| **Web Security** 🕸️     | HTTP request analysis, session/cookie handling, and vulnerability patching.   |
+
+---
+
+## 👤 Author
 
 Built by [Rakan Alfaifi](https://github.com/RakanAlfaifi).
