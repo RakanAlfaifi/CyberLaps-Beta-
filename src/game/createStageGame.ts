@@ -1,7 +1,10 @@
 import Phaser from "phaser";
 import { NetworkScene } from "./scenes/NetworkScene";
+import { DEFAULT_STAGE_INSETS, STAGE_INSETS_KEY, type StageInsets } from "./stageInsets";
 
 export interface StageGameHandle {
+  /** Tells the stage how much of each edge React overlays cover; the camera re-frames to the rest. */
+  setInsets: (insets: StageInsets) => void;
   destroy: () => void;
 }
 
@@ -11,7 +14,7 @@ export interface StageGameHandle {
  * so lines and text stay sharp on HiDPI screens. A ResizeObserver catches panel drags,
  * which do not fire window resize events.
  */
-export function createStageGame(parent: HTMLElement): StageGameHandle {
+export function createStageGame(parent: HTMLElement, insets: StageInsets = DEFAULT_STAGE_INSETS): StageGameHandle {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const toPixels = (cssSize: number) => Math.max(1, Math.round(cssSize * dpr));
   const rect = parent.getBoundingClientRect();
@@ -31,6 +34,7 @@ export function createStageGame(parent: HTMLElement): StageGameHandle {
     scale: { mode: Phaser.Scale.NONE, zoom: 1 / dpr },
     scene: [NetworkScene],
   });
+  game.registry.set(STAGE_INSETS_KEY, insets);
 
   const observer = new ResizeObserver(([entry]) => {
     if (!entry) return;
@@ -40,6 +44,7 @@ export function createStageGame(parent: HTMLElement): StageGameHandle {
   observer.observe(parent);
 
   return {
+    setInsets: (next) => game.registry.set(STAGE_INSETS_KEY, next),
     destroy: () => {
       observer.disconnect();
       game.destroy(true);

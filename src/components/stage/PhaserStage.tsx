@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import type { StageGameHandle } from "@/game";
+import type { StageGameHandle, StageInsets } from "@/game";
 import { useT } from "@/i18n";
 import { cn } from "@/lib/cn";
 
 /**
  * Hosts the Phaser game. Phaser is loaded on demand, after web fonts are ready
- * (canvas text does not re-render when a font arrives late).
+ * (canvas text does not re-render when a font arrives late). `insets` are the CSS pixels
+ * along each edge that overlays cover; the camera frames the map in what is left.
  */
-export function PhaserStage({ className }: { className?: string }) {
+export function PhaserStage({ className, insets }: { className?: string; insets?: StageInsets }) {
   const t = useT();
   const hostRef = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<StageGameHandle | null>(null);
+  const insetsRef = useRef(insets);
+  insetsRef.current = insets;
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -17,11 +21,10 @@ export function PhaserStage({ className }: { className?: string }) {
     if (!host) return;
 
     let cancelled = false;
-    let handle: StageGameHandle | null = null;
 
     Promise.all([import("@/game"), document.fonts?.ready])
       .then(([{ createStageGame }]) => {
-        if (!cancelled) handle = createStageGame(host);
+        if (!cancelled) handleRef.current = createStageGame(host, insetsRef.current);
       })
       .catch((error: unknown) => {
         console.error("Visual stage failed to start", error);
@@ -30,9 +33,14 @@ export function PhaserStage({ className }: { className?: string }) {
 
     return () => {
       cancelled = true;
-      handle?.destroy();
+      handleRef.current?.destroy();
+      handleRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (insets) handleRef.current?.setInsets(insets);
+  }, [insets]);
 
   return (
     <div

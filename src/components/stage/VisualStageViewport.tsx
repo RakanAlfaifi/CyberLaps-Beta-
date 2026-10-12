@@ -1,13 +1,29 @@
-import { BookOpen, ChevronLeft, ChevronRight, Layers, Monitor, Pause, RotateCcw, ShieldCheck, Workflow, type LucideIcon } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Layers,
+  ListChecks,
+  Monitor,
+  Pause,
+  RotateCcw,
+  ShieldCheck,
+  Workflow,
+  type LucideIcon,
+} from "lucide-react";
+import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
+import { playUiSound } from "@/components/ui/uiSound";
 import { getLevelDefinition } from "@/core/levels";
 import { useProgressStore } from "@/core/state/progressStore";
 import { useStageStore } from "@/core/state/stageStore";
 import { useUiStore } from "@/core/state/uiStore";
 import { getToolInfo } from "@/core/tools/catalog";
+import { sameInsets, type StageInsets } from "@/game/stageInsets";
 import { getLesson, LESSON_SECTIONS, localizeLevel, useT, type LessonSection, type MessageKey } from "@/i18n";
 import { cn } from "@/lib/cn";
 import type { LevelPhase } from "@/types/level";
@@ -24,8 +40,9 @@ const PHASE_BADGE: Record<LevelPhase, { label: MessageKey; tone: BadgeTone }> = 
 };
 
 /**
- * Center panel. Phaser draws the network into `#phaser-stage`; React overlays the
- * legend and the step bar (demo controls, guide, or objectives) on top of it.
+ * Center panel. Phaser draws the network edge to edge into `#phaser-stage`; React overlays the
+ * legend and the step card (demo controls, guide, or objectives) on top of it, and tells the
+ * stage how much room they take so the camera frames the map in the space that is left.
  */
 export function VisualStageViewport() {
   const t = useT();
@@ -35,6 +52,14 @@ export function VisualStageViewport() {
   const demoPaused = useStageStore((s) => s.walkthrough.status === "paused");
   const level = getLevelDefinition(levelId);
   const badge = PHASE_BADGE[phase];
+  const stageRef = useRef<HTMLDivElement>(null);
+  const legendRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLElement>(null);
+  // Collapsing lasts until the step changes, so a new phase or level always shows its instructions.
+  const stepKey = `${levelId}:${phase}`;
+  const [collapsedStep, setCollapsedStep] = useState<string | null>(null);
+  const collapsed = collapsedStep === stepKey;
+  const insets = useOverlayInsets(stageRef, legendRef, cardRef, collapsed, phase);
 
   return (
     <Panel aria-label={t("stage.title")}>
@@ -55,14 +80,22 @@ export function VisualStageViewport() {
         }
       />
 
-      <div className="relative min-h-0 flex-1 overflow-hidden bg-stage-ambient">
-        <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_140px_rgba(2,6,23,0.75)]" />
-        <PhaserStage className="absolute inset-0" />
+      <div ref={stageRef} className="relative min-h-0 flex-1 overflow-hidden bg-stage-ambient">
+        <PhaserStage className="absolute inset-0" insets={insets} />
+        <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_48px_rgba(2,6,23,0.45)]" />
 
-        <StageLegend className="absolute start-3 top-3" />
+        <div ref={legendRef} className="absolute start-3 top-3">
+          <StageLegend />
+        </div>
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-3">
-          <StepCard key={phase}>
+          <StepCard
+            key={phase}
+            cardRef={cardRef}
+            phaseLabel={t(badge.label)}
+            collapsed={collapsed}
+            onToggle={() => setCollapsedStep(collapsed ? null : stepKey)}
+          >
             {phase === "watch" && <WalkthroughBar />}
             {phase === "learn" && <LearnStep level={level} />}
             {phase === "apply" && <ApplyStep />}
@@ -73,10 +106,113 @@ export function VisualStageViewport() {
   );
 }
 
-function StepCard({ children }: { children: ReactNode }) {
+/** Spacing between the stage's edge and an overlay that hugs it (`top-3`, `p-3`). */
+const OVERLAY_GAP = 12;
+/** How far the open card's fold handle sticks up above its top edge (`-top-3`). */
+const HANDLE_OVERHANG = 12;
+
+/**
+ * Live CSS-pixel insets for the stage camera: the legend's band along the top and the step card's
+ * band along the bottom. Updates whenever either overlay or the stage itself changes size.
+ * `phase` remounts the card, so the observer has to pick up the new element.
+ */
+function useOverlayInsets(
+  stageRef: RefObject<HTMLElement>,
+  legendRef: RefObject<HTMLElement>,
+  cardRef: RefObject<HTMLElement>,
+  collapsed: boolean,
+  phase: LevelPhase,
+): StageInsets | undefined {
+  const [insets, setInsets] = useState<StageInsets>();
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const measure = () => {
+      const box = stage.getBoundingClientRect();
+      const legend = legendRef.current?.getBoundingClientRect();
+      const card = cardRef.current?.getBoundingClientRect();
+      const cardTop = card ? card.top - (collapsed ? 0 : HANDLE_OVERHANG) : box.bottom - OVERLAY_GAP;
+      const next: StageInsets = {
+        top: legend ? Math.round(legend.bottom - box.top) : OVERLAY_GAP,
+        right: OVERLAY_GAP,
+        bottom: Math.round(box.bottom - cardTop),
+        left: OVERLAY_GAP,
+      };
+      setInsets((prev) => (prev && sameInsets(prev, next) ? prev : next));
+    };
+    const observer = new ResizeObserver(measure);
+    for (const el of [stage, legendRef.current, cardRef.current]) if (el) observer.observe(el);
+    measure();
+    return () => observer.disconnect();
+  }, [stageRef, legendRef, cardRef, collapsed, phase]);
+
+  return insets;
+}
+
+interface StepCardProps {
+  cardRef: RefObject<HTMLElement>;
+  phaseLabel: string;
+  collapsed: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}
+
+/**
+ * Frosted card for the current step. A handle on its top edge folds it down to a small pill,
+ * handing the space back to the stage; the pill unfolds it again.
+ */
+function StepCard({ cardRef, phaseLabel, collapsed, onToggle, children }: StepCardProps) {
+  const t = useT();
+  const bodyId = useId();
+  const toggle = () => {
+    playUiSound("click");
+    onToggle();
+  };
+
   return (
-    <section className="pointer-events-auto w-full max-w-2xl animate-fade-in-up rounded-lg border border-line bg-void/85 px-4 py-3 shadow-panel backdrop-blur">
-      {children}
+    <section
+      ref={cardRef}
+      aria-label={t("stage.tasksTitle")}
+      className={cn(
+        "pointer-events-auto relative animate-fade-in-up rounded-lg border border-line bg-void/85 shadow-panel backdrop-blur",
+        collapsed ? "rounded-full" : "w-full max-w-2xl px-4 py-3",
+      )}
+    >
+      {collapsed ? (
+        <button
+          type="button"
+          aria-expanded={false}
+          aria-controls={bodyId}
+          title={t("stage.showTasks")}
+          onClick={toggle}
+          className="flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-surface-overlay focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyber-glow"
+        >
+          <ListChecks aria-hidden className="h-4 w-4 text-cyber-glow" />
+          <span>{t("stage.tasksTitle")}</span>
+          <span aria-hidden className="text-ink-faint">
+            ·
+          </span>
+          <span className="font-medium text-ink-muted">{phaseLabel}</span>
+          <ChevronUp aria-hidden className="h-4 w-4 text-ink-muted" />
+          <span className="sr-only">{t("stage.showTasks")}</span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          aria-expanded
+          aria-controls={bodyId}
+          aria-label={t("stage.hideTasks")}
+          title={t("stage.hideTasks")}
+          onClick={toggle}
+          className="absolute -top-3 left-1/2 flex h-6 w-12 -translate-x-1/2 items-center justify-center rounded-full border border-line bg-void/95 text-ink-muted shadow-panel transition-colors hover:border-cyber-glow/60 hover:text-cyber-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyber-glow"
+        >
+          <ChevronDown aria-hidden className="h-4 w-4" />
+        </button>
+      )}
+      <div id={bodyId} hidden={collapsed}>
+        {children}
+      </div>
     </section>
   );
 }

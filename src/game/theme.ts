@@ -35,20 +35,26 @@ export const FONT_MONO = '"JetBrains Mono", ui-monospace, monospace';
 
 /** Draw order on the stage, back to front. Devices add a sliver of their y so nearer ones overlap farther ones. */
 export const DEPTH = {
+  backdrop: -10,
+  grid: -5,
   board: 0,
   zones: 1,
+  light: 1.5,
   links: 2,
   trails: 3,
+  vignette: 4.5,
   devices: 5,
   captions: 8,
+  /** Subnet name tags: above every model and even an expanded caption, so a network's name is never hidden. */
+  zoneTags: 8.8,
   ambient: 9,
   packets: 10,
   labels: 12,
 } as const;
 
 /**
- * Device accents: the clay color of each 3D model. Deliberately avoid
- * green, red and amber so a device never looks like a packet result.
+ * Device accents: the trim, status lights and screen glow of each 3D model. Deliberately
+ * avoid green, red and amber so a device never looks like a packet result.
  */
 export const DEVICE_ACCENT: Record<DeviceKind, number> = {
   router: 0x8b5cf6,
@@ -59,17 +65,54 @@ export const DEVICE_ACCENT: Record<DeviceKind, number> = {
   firewall: 0xf97316,
 };
 
-/** Soft off-white clay for plinths and keycaps; tinted toward each device's accent. */
-export const CLAY_LIGHT = 0xdfe6f1;
+/** Brushed-metal stock the hardware is built from, light to dark. */
+export const METAL = {
+  chrome: 0xc9d3e0,
+  steel: 0x8d99ab,
+  pewter: 0x5d6879,
+  gunmetal: 0x3a4454,
+  graphite: 0x252d3a,
+  black: 0x10151d,
+} as const;
 
-/** Colors for a device nobody has verified yet: a dark crate with a floating "?". */
+/** Neon light: pedestal trim, cable cores and the data pulses running along them. */
+export const NEON = {
+  blue: 0x38bdf8,
+  cyan: 0x22d3ee,
+  /** Pedestal trim of a device nobody has verified yet: the light is off. */
+  off: 0x4a5a78,
+} as const;
+
+/** Colors for a device nobody has verified yet: a dark crate with a floating "?", buried in smoke. */
 export const MYSTERY = {
   cube: 0x3a4760,
-  plinth: 0x2a3448,
-  plinthTrim: 0x1a2232,
   glow: 0x94a3b8,
+  /** Smoke from the floor (dense, dark) up to the crest (thin, light). */
+  smoke: [0x2a3550, 0x3c4a68, 0x55647f, 0x707f9c, 0x8a98b4],
+  smokeCore: 0x1b2438,
+  fogGlow: 0x4f6fae,
+  /** Frosted glass callout the "?" floats in, and its bright rim. */
+  glass: 0x1e293b,
+  glassEdge: 0xcbd5e1,
   mark: "#E2E8F0",
   markShadow: "#64748B",
+} as const;
+
+/** Dark frosted glass behind every stage label: rgba(15, 23, 42, 0.85) with a crisp slate rim. */
+export const LABEL_GLASS = {
+  fill: 0x0f172a,
+  alpha: 0.85,
+  edge: 0x475569,
+  edgeAlpha: 0.9,
+  sheen: 0.07,
+} as const;
+
+/** Deep-space room the diorama floats in. */
+export const SPACE = {
+  core: 0x0d1a33,
+  edge: 0x02040a,
+  nebula: [0x1d4ed8, 0x6d28d9, 0x0891b2],
+  grid: NEON.blue,
 } as const;
 
 export interface SlabColors {
@@ -85,16 +128,24 @@ export interface ZoneStyle extends SlabColors {
   tag: number;
 }
 
-/** The diorama: a thick dark base board, subnet plates on top, clay cables between devices. */
+/** Subnet plate colors plus the neon trim around its edge. */
+export interface ZonePlate extends ZoneStyle {
+  neon: number;
+}
+
+/** The diorama: a thick dark glass deck, subnet plates on top, Ethernet cables between devices. */
 export const DIORAMA = {
-  board: { top: 0x121a2c, rim: 0x22304b, front: 0x0e1526, frontDark: 0x080c17 } satisfies SlabColors,
-  edgeGlow: PALETTE.blueGlow,
+  board: { top: 0x0a1222, rim: 0x1a2944, front: 0x0a1120, frontDark: 0x04070f } satisfies SlabColors,
+  edgeGlow: NEON.blue,
   zones: [
-    { top: 0x1a2744, rim: 0x2d4170, front: 0x15213b, frontDark: 0x0f182d, ink: "#93C5FD", tag: 0x1e3a8a },
-    { top: 0x211e42, rim: 0x3a3170, front: 0x1b1837, frontDark: 0x13112a, ink: "#C4B5FD", tag: 0x4c1d95 },
-    { top: 0x142f3a, rim: 0x1f4d5d, front: 0x11262f, frontDark: 0x0b1b22, ink: "#67E8F9", tag: 0x155e75 },
-  ] satisfies readonly ZoneStyle[],
-  cable: { body: 0x2e3e5c, highlight: 0x56709b },
+    { top: 0x0f1c36, rim: 0x23406f, front: 0x0d182e, frontDark: 0x081022, ink: "#93C5FD", tag: 0x1e3a8a, neon: 0x60a5fa },
+    { top: 0x161433, rim: 0x3a2f72, front: 0x13112b, frontDark: 0x0c0a1e, ink: "#C4B5FD", tag: 0x4c1d95, neon: 0xa78bfa },
+    { top: 0x0b2430, rim: 0x1b4f5f, front: 0x0a1e27, frontDark: 0x06141a, ink: "#67E8F9", tag: 0x155e75, neon: 0x22d3ee },
+  ] satisfies readonly ZonePlate[],
+  /** Ethernet jacket from its shadowed underside to the specular streak on top, and the strain-relief boots. */
+  cable: { jacket: 0x070c16, body: 0x1d2b45, sheen: 0x4a6491, spec: 0xc7d6ee, boot: 0x2a3650 },
+  /** Light pools on the deck, cool from the upper left and violet from the right. */
+  lights: [0x1d4ed8, 0x7c3aed],
   dust: [0x93c5fd, 0xc4b5fd, 0xe2e8f0],
 } as const;
 

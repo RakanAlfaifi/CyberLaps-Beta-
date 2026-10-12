@@ -13,6 +13,8 @@ const SPEED = 320;
 const SEGMENT_MS = { min: 260, max: 1300 };
 /** A scan can fire many packets at once; only one sound per window. */
 const SFX_GAP_MS = 140;
+/** How many flows' endpoints are kept for the packet inspector, oldest dropped first. */
+const MAX_REMEMBERED_FLOWS = 500;
 
 type Point = { x: number; y: number };
 
@@ -35,6 +37,11 @@ function protocolLabel(flow: PacketFlow): string {
   return flow.dstPort !== undefined ? `${proto} :${flow.dstPort}` : proto;
 }
 
+/** A direct line between two devices, for hops with no cable drawn between them. */
+function straight(a: Point, b: Point): (t: number) => Point {
+  return (t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+}
+
 function segmentMs(a: Point, b: Point): number {
   const ms = (Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y) / SPEED) * 1000;
   return Phaser.Math.Clamp(ms, SEGMENT_MS.min, SEGMENT_MS.max);
@@ -45,7 +52,9 @@ const HIT_RADIUS = 18;
 /** Packets hover this high above the cable they travel along. */
 const LIFT = 11;
 /** Result tags float above the 3D models and the "?" over unknown crates. */
-const TAG_Y = 118;
+const TAG_Y = 124;
+/** Segments in the glowing trail drawn along a curved cable. */
+const TRAIL_STEPS = 24;
 
 export interface PacketFlowHooks {
   /** The packet's story is over: its reply got home, it was dropped, or it gave up waiting. */
@@ -111,6 +120,8 @@ export class PacketFlowSystem {
   /** Result tags currently shown above each device, so new ones stack instead of overlapping. */
   private readonly liveTags = new Map<DeviceNode, number>();
   private readonly sprites = new Map<string, PacketSprite>();
+  /** Sender and target device of recent flows, still known after the packet has left the screen. */
+  private readonly endpointsById = new Map<string, string[]>();
   private inspectedId: string | null = null;
 
   constructor(
@@ -121,7 +132,17 @@ export class PacketFlowSystem {
   ) {}
 
   play(flow: PacketFlow): void {
+    this.endpointsById.set(flow.id, flow.dstId ? [flow.srcId, flow.dstId] : [flow.srcId]);
+    if (this.endpointsById.size > MAX_REMEMBERED_FLOWS) {
+      const oldest = this.endpointsById.keys().next().value;
+      if (oldest !== undefined) this.endpointsById.delete(oldest);
+    }
     this.scene.time.delayedCall(flow.delayMs ?? 0, () => this.launch(flow));
+  }
+
+  /** The devices a flow ran between, if the stage has played it. */
+  endpoints(flowId: string): readonly string[] {
+    return this.endpointsById.get(flowId) ?? [];
   }
 
   /** Rings the packet open in the inspector, if it is still on screen. */
@@ -201,7 +222,7 @@ export class PacketFlowSystem {
     });
   }
 
-  /** Move hop by hop, lighting each cable while the packet is on it. */
+  /** Move hop by hop along the cables, lighting each one while the packet is on it. */
   private travel(sprite: PacketSprite, path: DeviceNode[], color: number, done: () => void): void {
     const step = (i: number) => {
       if (i >= path.length) {
@@ -211,19 +232,25 @@ export class PacketFlowSystem {
       const from = path[i - 1];
       const to = path[i];
       const duration = segmentMs(from, to);
+      const cable = this.view.cable(from.device.id, to.device.id) ?? straight(from, to);
+      const points = Array.from({ length: TRAIL_STEPS + 1 }, (_, k) => cable(k / TRAIL_STEPS));
       const trail = this.scene.add.graphics().setDepth(DEPTH.trails).setBlendMode(Phaser.BlendModes.ADD);
       trail.lineStyle(10, color, 0.16);
-      trail.lineBetween(from.x, from.y, to.x, to.y);
+      trail.strokePoints(points);
       trail.lineStyle(3, color, 0.85);
-      trail.lineBetween(from.x, from.y - 1, to.x, to.y - 1);
+      trail.strokePoints(points.map((p) => ({ x: p.x, y: p.y - 1 })));
 
-      this.scene.tweens.add({
-        targets: sprite,
-        x: to.x,
-        y: to.y,
+      this.scene.tweens.addCounter({
+        from: 0,
+        to: 1,
         duration,
         ease: "Sine.easeInOut",
+        onUpdate: (tween) => {
+          const p = cable(tween.getValue() ?? 0);
+          sprite.setPosition(p.x, p.y);
+        },
         onComplete: () => {
+          sprite.setPosition(to.x, to.y);
           this.scene.tweens.add({
             targets: trail,
             alpha: 0,

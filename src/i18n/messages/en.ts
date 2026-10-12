@@ -66,6 +66,9 @@ export const en = {
   "stage.failed": "The network view could not start. Reload the page to try again.",
   "stage.unverifiedNode": "Unverified node",
   "stage.you": "YOU",
+  "stage.tasksTitle": "Instructions & tasks",
+  "stage.hideTasks": "Hide instructions",
+  "stage.showTasks": "Show instructions",
 
   "legend.aria": "Packet colors",
   "legend.moving": "Moving",

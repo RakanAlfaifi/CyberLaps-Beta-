@@ -6,16 +6,28 @@ import { useUiStore } from "@/core/state/uiStore";
 import { useLanguageStore } from "@/i18n/languageStore";
 import { translate, type Language } from "@/i18n/translate";
 import type { LevelDefinition } from "@/types/topology";
+import { spaceKey, vignetteKey } from "../objects/clayTextures";
 import type { NodeLabels } from "../objects/DeviceNode";
 import { TopologyView } from "../objects/TopologyView";
 import { PacketFlowSystem } from "../systems/PacketFlowSystem";
+import { DEFAULT_STAGE_INSETS, STAGE_INSETS_KEY, type StageInsets } from "../stageInsets";
+import { DEPTH } from "../theme";
 import { WalkthroughDirector, type Scheduler } from "../walkthrough/WalkthroughDirector";
 
 export const NETWORK_SCENE_KEY = "network";
 
-/** CSS pixels kept clear for the React overlays (legend on top, walkthrough bar at the bottom). */
-const OVERLAY_INSETS = { top: 44, right: 20, bottom: 164, left: 20 };
-const MAX_ZOOM = 1.6;
+/** CSS pixels of breathing room between the map and the overlays or the stage edge. */
+const FRAME_MARGIN = 6;
+const MAX_ZOOM = 2.2;
+/** How long the camera glides to a new framing when an overlay grows or shrinks. */
+const REFRAME_MS = 420;
+
+/** What the camera shows: its zoom and the world point at the middle of the canvas. */
+interface CameraView {
+  zoom: number;
+  x: number;
+  y: number;
+}
 
 const nodeLabels = (language: Language): NodeLabels => ({
   unverified: translate(language, "stage.unverifiedNode"),
@@ -34,8 +46,13 @@ export class NetworkScene extends Phaser.Scene {
   private view: TopologyView | null = null;
   private packets: PacketFlowSystem | null = null;
   private director: WalkthroughDirector | null = null;
+  /** Deep space behind everything and a vignette over the floor, both pinned to the viewport. */
+  private backdrop: Phaser.GameObjects.Image | null = null;
+  private vignette: Phaser.GameObjects.Image | null = null;
   private unsubscribers: (() => void)[] = [];
   private destroyHooked = false;
+  private cameraView: CameraView | null = null;
+  private reframe: { from: CameraView; to: CameraView; elapsed: number } | null = null;
 
   constructor() {
     super(NETWORK_SCENE_KEY);
@@ -57,6 +74,8 @@ export class NetworkScene extends Phaser.Scene {
       return;
     }
 
+    this.backdrop = this.add.image(0, 0, spaceKey(this)).setScrollFactor(0).setDepth(DEPTH.backdrop);
+    this.vignette = this.add.image(0, 0, vignetteKey(this)).setScrollFactor(0).setDepth(DEPTH.vignette);
     this.view = new TopologyView(this, this.level.topology, nodeLabels(useLanguageStore.getState().language));
     this.packets = new PacketFlowSystem(this, this.view, this.level.topology, {
       settled: (flow) => useStageStore.getState().packetSettled(flow.id),
@@ -75,8 +94,10 @@ export class NetworkScene extends Phaser.Scene {
       finished: () => useStageStore.getState().finishWalkthrough(),
     });
 
-    this.scale.on(Phaser.Scale.Events.RESIZE, this.frameCamera, this);
-    this.frameCamera();
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.onResize, this);
+    this.registry.events.on(`changedata-${STAGE_INSETS_KEY}`, this.onInsetsChange, this);
+    this.input.on(Phaser.Input.Events.POINTER_DOWN, this.onStagePointerDown, this);
+    this.frameCamera(false);
 
     useStageStore.getState().stageLoaded(this.level.id, this.level.walkthrough.length);
     this.bindStores();
@@ -100,7 +121,9 @@ export class NetworkScene extends Phaser.Scene {
       useUiStore.subscribe((s, prev) => {
         if (s.simulationPaused !== prev.simulationPaused) this.applyFreeze();
         if (s.activeModal !== prev.activeModal) {
-          this.packets?.setInspected(s.activeModal?.kind === "packetInspector" ? s.activeModal.packetId : null);
+          const packetId = s.activeModal?.kind === "packetInspector" ? s.activeModal.packetId : null;
+          this.packets?.setInspected(packetId);
+          view.setInspected(packetId ? (this.packets?.endpoints(packetId) ?? []) : []);
         }
       }),
 
@@ -164,29 +187,106 @@ export class NetworkScene extends Phaser.Scene {
     this.tweens.timeScale = frozen ? 0 : 1;
   }
 
-  /** Fit the map into the area not covered by overlays. */
-  private frameCamera(): void {
+  override update(_time: number, delta: number): void {
+    this.view?.update(delta);
+    const glide = this.reframe;
+    if (!glide) return;
+    glide.elapsed += delta;
+    const k = Math.min(1, glide.elapsed / REFRAME_MS);
+    const f = Phaser.Math.Easing.Cubic.InOut(k);
+    const { from, to } = glide;
+    // Zoom is a scale, so blend it geometrically; the center moves linearly between the framings.
+    this.applyView({
+      zoom: from.zoom * Math.pow(to.zoom / from.zoom, f),
+      x: from.x + (to.x - from.x) * f,
+      y: from.y + (to.y - from.y) * f,
+    });
+    if (k >= 1) this.reframe = null;
+  }
+
+  private onResize(): void {
+    this.frameCamera(false);
+  }
+
+  private onInsetsChange(): void {
+    this.frameCamera(true);
+  }
+
+  /** A click on empty stage (no device, caption or packet under it) lets go of the selected device. */
+  private onStagePointerDown(_pointer: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]): void {
+    if (over.length === 0) this.view?.select(null);
+  }
+
+  /**
+   * Scales and centers the diorama so it fills as much of the canvas as the React overlays leave
+   * free. The overlays report their size live, so a collapsed instructions card frees its space.
+   */
+  private frameCamera(animate: boolean): void {
     if (!this.view) return;
-    const cam = this.cameras.main;
     const { width, height } = this.scale.gameSize;
+    this.cameras.main.setSize(width, height);
+    const target = this.fitView(width, height);
+    if (animate && this.cameraView) {
+      this.reframe = { from: this.cameraView, to: target, elapsed: 0 };
+    } else {
+      this.reframe = null;
+      this.applyView(target);
+    }
+  }
+
+  private fitView(width: number, height: number): CameraView {
     const pxRatio = 1 / (this.scale.zoom || 1);
-    const inset = {
-      top: OVERLAY_INSETS.top * pxRatio,
-      right: OVERLAY_INSETS.right * pxRatio,
-      bottom: OVERLAY_INSETS.bottom * pxRatio,
-      left: OVERLAY_INSETS.left * pxRatio,
-    };
+    const inset = this.overlayInsets();
     const availW = Math.max(1, width - inset.left - inset.right);
     const availH = Math.max(1, height - inset.top - inset.bottom);
 
-    const box = this.view.bounds();
-    const zoom = Math.min(availW / box.width, availH / box.height, MAX_ZOOM * pxRatio);
+    const box = this.view!.bounds();
+    const zoom = Math.max(0.05, Math.min(availW / box.width, availH / box.height, MAX_ZOOM * pxRatio));
+    return {
+      zoom,
+      x: box.centerX + (inset.right - inset.left) / 2 / zoom,
+      y: box.centerY + (inset.bottom - inset.top) / 2 / zoom,
+    };
+  }
 
-    cam.setSize(width, height);
-    cam.setZoom(zoom);
-    const offsetX = (inset.right - inset.left) / 2 / zoom;
-    const offsetY = (inset.bottom - inset.top) / 2 / zoom;
-    cam.centerOn(box.centerX + offsetX, box.centerY + offsetY);
+  /** Game pixels along each canvas edge that the React overlays cover, plus the breathing room. */
+  private overlayInsets(): StageInsets {
+    const pxRatio = 1 / (this.scale.zoom || 1);
+    const insets: StageInsets = this.registry.get(STAGE_INSETS_KEY) ?? DEFAULT_STAGE_INSETS;
+    const edge = (css: number) => (Math.max(0, css) + FRAME_MARGIN) * pxRatio;
+    return { top: edge(insets.top), right: edge(insets.right), bottom: edge(insets.bottom), left: edge(insets.left) };
+  }
+
+  private applyView(view: CameraView): void {
+    const cam = this.cameras.main;
+    cam.setZoom(view.zoom);
+    cam.centerOn(view.x, view.y);
+    this.cameraView = view;
+    this.fitScreenLayers(cam.width, cam.height, view.zoom);
+    this.view?.setViewport(this.visibleArea(cam.width, cam.height, view));
+  }
+
+  /** The world rect a framing shows between the overlays, which device details must stay inside. */
+  private visibleArea(width: number, height: number, view: CameraView): Phaser.Geom.Rectangle {
+    const inset = this.overlayInsets();
+    const z = view.zoom;
+    return new Phaser.Geom.Rectangle(
+      view.x + (inset.left - width / 2) / z,
+      view.y + (inset.top - height / 2) / z,
+      Math.max(1, width - inset.left - inset.right) / z,
+      Math.max(1, height - inset.top - inset.bottom) / z,
+    );
+  }
+
+  /** Viewport-pinned layers still scale with the camera zoom around the view's center, so size them against it. */
+  private fitScreenLayers(width: number, height: number, zoom: number): void {
+    const w = width / zoom;
+    const h = height / zoom;
+    if (this.backdrop) {
+      const cover = Math.max(w / this.backdrop.width, h / this.backdrop.height);
+      this.backdrop.setPosition(width / 2, height / 2).setScale(cover);
+    }
+    this.vignette?.setPosition(width / 2, height / 2).setDisplaySize(w, h);
   }
 
   private scheduler(): Scheduler {
@@ -202,10 +302,16 @@ export class NetworkScene extends Phaser.Scene {
     this.director?.stop();
     for (const unsubscribe of this.unsubscribers) unsubscribe();
     this.unsubscribers = [];
-    this.scale.off(Phaser.Scale.Events.RESIZE, this.frameCamera, this);
+    this.scale.off(Phaser.Scale.Events.RESIZE, this.onResize, this);
+    this.registry.events.off(`changedata-${STAGE_INSETS_KEY}`, this.onInsetsChange, this);
+    this.input?.off(Phaser.Input.Events.POINTER_DOWN, this.onStagePointerDown, this);
+    this.reframe = null;
+    this.cameraView = null;
     this.view = null;
     this.packets = null;
     this.director = null;
+    this.backdrop = null;
+    this.vignette = null;
     this.level = null;
   }
 

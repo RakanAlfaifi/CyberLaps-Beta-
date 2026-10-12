@@ -68,6 +68,9 @@ export const ar: Record<MessageKey, string> = {
   "stage.failed": "تعذّر تشغيل عرض الشبكة. أعد تحميل الصفحة وحاول مرة أخرى.",
   "stage.unverifiedNode": "عقدة غير مُتحقَّق منها",
   "stage.you": "أنت",
+  "stage.tasksTitle": "التعليمات والمهام",
+  "stage.hideTasks": "إخفاء التعليمات",
+  "stage.showTasks": "إظهار التعليمات",
 
   "legend.aria": "ألوان الحزم",
   "legend.moving": "متحركة",
