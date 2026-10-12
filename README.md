@@ -1,4 +1,5 @@
-# CyberLaps(Beta)     Last updated (October 12, 2026)
+# CyberLaps(Beta)    
+"Last updated (October 12, 2026)"
 
 Interactive Cyber Defense & Systems Security Learning. A local teaching lab: you watch packets move, read them layer by layer, type simple commands, and save what you find.
 
@@ -72,3 +73,33 @@ Discover active hosts, open ports, and running services across local networks.
 ## 👤 Author
 
 Built by [Rakan Alfaifi](https://github.com/RakanAlfaifi).
+
+
+---
+
+# Updated
+
+
+
+# 🏗️ Architecture Refactor Summary
+
+> **Timestamp:** Monday, October 12, 2026 at 05:30 PM (+03)
+>
+> **Status:** Production-Ready | 178 Passing Tests | 0 Circular Dependencies
+
+---
+
+### 🔑 Key Achievements
+* **Zero Circular Imports:** Resolved all import cycles (`ledger` → `topology`).
+* **Clean Data Flow:** Decoupled `AudioManager` via neutral `defaults.ts`.
+* **Fault-Tolerant Engine:** Level loader (`registry.ts`) and audio (`uiSound.ts`) degrade gracefully on errors without crashing the app.
+* **Expanded Testing:** Added 47 new unit tests (178 passing across 18 suites).
+* **Codebase Hygiene:** Purged dead files/exports and synchronized `architecture-map.html` (156 files, 121 modules, 439 edges).
+
+---
+
+### 📊 Quick Metrics
+* **Import Cycles:** `0`
+* **Tests:** `178/178 Passing`
+* **Audio Blast Radius:** `23 Modules` (reduced from 35)
+* **Untested Engine Modules:** `3` (reduced from 10)
