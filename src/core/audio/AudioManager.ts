@@ -1,7 +1,7 @@
 import { Howl } from "howler";
 import type { AudioSettings, SfxName, SfxOptions } from "@/types/audio";
-import { DEFAULT_AUDIO_SETTINGS } from "@/core/state/audioStore";
 import { createAmbientPad, type AmbientPad } from "./ambientPad";
+import { DEFAULT_AUDIO_SETTINGS } from "./defaults";
 import { effectiveSfxGain, mixFor } from "./mix";
 import { SFX_RECIPES } from "./sfxRecipes";
 
@@ -23,9 +23,12 @@ type AudioContextCtor = typeof AudioContext;
  * Howler has its own output, so the track's volume carries master × music itself.
  *
  * Browsers block audio until the user interacts, so nothing is created until
- * unlock() is called from a user gesture.
+ * unlock() is called from a user gesture. If the browser refuses to create a
+ * context, the manager stays silent instead of throwing.
+ *
+ * Exported for tests; the app uses the `audioManager` singleton.
  */
-class AudioManager {
+export class AudioManager {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private musicBus: GainNode | null = null;
@@ -37,6 +40,7 @@ class AudioManager {
   private trackReady = false;
 
   private unlocked = false;
+  private contextFailed = false;
   private musicPlaying = false;
   private settings: AudioSettings = { ...DEFAULT_AUDIO_SETTINGS };
   private lastPlayedAt = new Map<SfxName, number>();
@@ -155,10 +159,23 @@ class AudioManager {
 
   private ensureContext(): AudioContext | null {
     if (this.ctx) return this.ctx;
+    // unlock() runs on every gesture; retrying a failed setup would leak a context each time.
+    if (this.contextFailed) return null;
+    try {
+      return this.createContext();
+    } catch (error) {
+      this.contextFailed = true;
+      console.warn("[audio] Could not start the audio engine; continuing without sound.", error);
+      return null;
+    }
+  }
 
+  private createContext(): AudioContext | null {
     const Ctor: AudioContextCtor | undefined =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: AudioContextCtor }).webkitAudioContext;
+      typeof window === "undefined"
+        ? undefined
+        : (window.AudioContext ??
+          (window as unknown as { webkitAudioContext?: AudioContextCtor }).webkitAudioContext);
     if (!Ctor) return null;
 
     const ctx = new Ctor();

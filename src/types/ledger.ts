@@ -1,8 +1,8 @@
 import type { LevelId } from "./level";
-import type { DeviceKind } from "./topology";
+import type { DeviceKind, PortState } from "./topology";
 
+export type { PortState };
 export type PortProtocol = "tcp" | "udp";
-export type PortState = "open" | "closed" | "filtered";
 
 export interface LedgerPort {
   port: number;

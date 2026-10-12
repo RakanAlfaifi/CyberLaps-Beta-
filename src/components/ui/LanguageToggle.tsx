@@ -1,7 +1,7 @@
 import { Languages } from "lucide-react";
-import { playSfx } from "@/core/audio";
 import { LANGUAGES, useLanguageStore, useT } from "@/i18n";
 import { cn } from "@/lib/cn";
+import { playUiSound } from "./uiSound";
 
 /** EN / ع segmented switch. Changing it flips the whole page between LTR and RTL. */
 export function LanguageToggle({ className }: { className?: string }) {
@@ -28,7 +28,7 @@ export function LanguageToggle({ className }: { className?: string }) {
             lang={lang}
             onClick={() => {
               if (active) return;
-              playSfx("click");
+              playUiSound("click");
               setLanguage(lang);
             }}
             className={cn(

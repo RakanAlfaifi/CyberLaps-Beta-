@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes } from "react";
-import { playSfx } from "@/core/audio";
 import { cn } from "@/lib/cn";
 import type { SfxName } from "@/types/audio";
+import { playUiSound } from "./uiSound";
 
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Used for both the tooltip and the screen-reader label. */
@@ -21,7 +21,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       aria-label={label}
       title={label}
       onClick={(e) => {
-        if (sfx) playSfx(sfx);
+        if (sfx) playUiSound(sfx);
         onClick?.(e);
       }}
       className={cn(

@@ -1,9 +1,15 @@
 import { useEffect, type ReactNode } from "react";
-import { audioManager } from "@/core/audio";
+import { setUiSoundHandler } from "@/components/ui/uiSound";
+import { audioManager, playSfx } from "@/core/audio";
 import { useAudioStore } from "@/core/state/audioStore";
 
-/** Keeps the AudioManager in sync with saved settings and the browser's audio rules. */
+/**
+ * Keeps the AudioManager in sync with saved settings and the browser's audio rules,
+ * and connects UI primitives (buttons, toggles) to it for click sounds.
+ */
 export function AudioProvider({ children }: { children: ReactNode }) {
+  useEffect(() => setUiSoundHandler((name) => playSfx(name)), []);
+
   useEffect(() => {
     audioManager.applySettings(useAudioStore.getState());
     return useAudioStore.subscribe((state) => audioManager.applySettings(state));

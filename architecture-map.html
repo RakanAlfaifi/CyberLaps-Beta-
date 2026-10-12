@@ -1,0 +1,1292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CyberLaps — Architecture Map</title>
+<style>
+:root{
+  --bg:#0b0f19;--panel:#111827;--panel2:#0e1522;--line:#1e293b;--line2:#273449;
+  --ink:#e5e7eb;--mute:#94a3b8;--dim:#64748b;--acc:#38bdf8;--up:#38bdf8;--down:#f87171;
+  --mono:ui-monospace,"JetBrains Mono",Consolas,monospace;
+  --ar:"Segoe UI","Noto Sans Arabic","Noto Naskh Arabic","Geeza Pro","Arabic UI Text",Tahoma,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.45 Inter,"Segoe UI",system-ui,sans-serif}
+body{display:flex;flex-direction:column}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#1f2a3d;border-radius:8px}::-webkit-scrollbar-track{background:transparent}
+header{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0f1628,#0b0f19)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;white-space:nowrap}
+.logo .mk{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#38bdf8,#34d399);display:grid;place-items:center;color:#04222c;font-weight:800}
+.logo small{display:block;font-weight:400;color:var(--dim);font-size:11px}
+.stats{display:flex;gap:6px;flex-wrap:wrap}
+.stat{padding:3px 9px;border:1px solid var(--line2);border-radius:999px;color:var(--mute);font-size:12px;white-space:nowrap}
+.stat b{color:var(--ink)}
+.search{margin-inline-start:auto;position:relative}
+.search input{width:360px;background:#0f1626;border:1px solid var(--line2);color:var(--ink);border-radius:8px;padding-block:8px;padding-inline:32px 12px;outline:none;font:inherit;unicode-bidi:plaintext}
+.search input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.search:before{content:"⌕";position:absolute;inset-inline-start:11px;top:6px;color:var(--dim);font-size:16px}
+.search kbd{position:absolute;inset-inline-end:9px;top:8px;font:11px var(--mono);color:var(--dim);border:1px solid var(--line2);border-radius:4px;padding:0 5px}
+nav{display:flex;gap:2px;padding:0 20px;border-bottom:1px solid var(--line);background:#0c1220}
+nav button{background:none;border:0;color:var(--mute);padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;font:inherit}
+nav button:hover{color:var(--ink)}
+nav button.on{color:var(--ink);border-color:var(--acc)}
+main{flex:1;min-height:0;position:relative}
+.view{position:absolute;inset:0;display:none;overflow:auto}
+.view.on{display:block}
+#v-explorer.on,#v-cascade.on,#v-workflows.on{display:grid;grid-template-rows:minmax(0,1fr);overflow:hidden}
+#v-explorer{grid-template-columns:360px 1fr}
+#v-cascade{grid-template-columns:340px 1fr}
+#v-workflows{grid-template-columns:310px 1fr}
+.side{border-inline-end:1px solid var(--line);overflow:auto;background:var(--panel2)}
+.pane{overflow:auto;padding:22px 28px 60px}
+h2{font-size:18px;margin:0 0 4px}h3{font-size:13px;margin:22px 0 8px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+p{margin:6px 0}
+.muted{color:var(--mute)}.dim{color:var(--dim)}.mono{font-family:var(--mono)}
+.empty{padding:20px;color:var(--dim)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;border:1px solid var(--line2);background:#0f1626;color:#cbd5e1;font-size:12px;cursor:pointer;margin-block:2px;margin-inline:0 3px;white-space:nowrap}
+.chip:hover{border-color:#3b82f6;color:#fff}
+.chip.red{border-color:#5b2330;background:#1d1117;color:#fecaca}
+.chip.feat{cursor:default}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid currentColor}
+.legend{display:flex;flex-wrap:wrap;gap:4px;padding:10px 10px 6px}
+.lg{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--mute);border:1px solid var(--line2);border-radius:999px;padding:2px 8px;cursor:pointer;user-select:none}
+.lg.off{opacity:.35;text-decoration:line-through}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.grid{display:grid;gap:12px}
+.btn{background:#13213a;border:1px solid #23406b;color:#bfdbfe;border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit;font-size:12px}
+.btn:hover{background:#18294a}
+/* tree */
+.tree{padding:4px 6px 40px}
+.dir>summary{list-style:none;cursor:pointer;padding:3px 6px;border-radius:6px;color:#e2e8f0;display:flex;gap:6px;align-items:center;font-weight:600}
+.dir>summary::-webkit-details-marker{display:none}
+.dir>summary:before{content:"▸";color:var(--dim);font-size:10px;width:10px;transition:transform .15s}
+.dir[open]>summary:before{transform:rotate(90deg)}
+.dir>summary:hover{background:#121a2b}
+.dir .dd{font-weight:400;color:var(--dim);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.dir .cnt{font-weight:400;color:var(--dim);font-size:11px}
+.kids{margin-inline-start:11px;border-inline-start:1px dashed #1e293b;padding-inline-start:4px}
+.f{display:flex;align-items:center;gap:7px;padding:3px 8px;border-radius:6px;cursor:pointer;color:#cbd5e1}
+.f:hover{background:#141c2e}
+.f.sel{background:#16213a;outline:1px solid #2b4a74}
+.f.hl-dep{background:rgba(56,189,248,.12)}.f.hl-dep .nm{color:#7dd3fc}
+.f.hl-imp{background:rgba(248,113,113,.11)}.f.hl-imp .nm{color:#fca5a5}
+.nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi{font-size:11px;color:var(--dim);font-family:var(--mono)}
+.treehint{font-size:11px;color:var(--dim);padding:0 12px 6px;display:flex;gap:10px}
+.treehint i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-inline-end:4px;vertical-align:-1px}
+/* detail */
+.dhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:10px;margin:16px 0}
+.metric{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.metric b{font-size:20px;display:block}.metric span{font-size:11px;color:var(--mute)}
+.break{border:1px solid #4c1d24;background:linear-gradient(180deg,#1a0f14,#120d12);border-radius:12px;padding:14px 16px;margin-top:6px}
+.break h4{margin:0 0 8px;color:#fca5a5;font-size:13px}
+.lvl{display:flex;gap:10px;align-items:flex-start;margin:6px 0}
+.lvl>.tag{flex:none;font:11px var(--mono);color:#fca5a5;border:1px solid #5b2330;border-radius:6px;padding:2px 6px;margin-top:3px;min-width:64px;text-align:center}
+.rt{border-inline-start:3px solid #fbbf24;background:#18150b;padding:8px 12px;border-radius:6px;color:#fde68a;margin-top:10px}
+.guard{border-inline-start:3px solid #34d399;background:#0b1812;padding:8px 12px;border-radius:6px;color:#a7f3d0;margin-top:10px}
+.welcome{max-width:720px}
+/* graph */
+#v-graph{background:radial-gradient(circle at 20% 0,#0f1a2e,#0b0f19 60%)}
+.gbar{position:sticky;top:0;left:0;z-index:3;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 14px;background:rgba(11,15,25,.92);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.gbar label{color:var(--mute);font-size:12px;display:flex;gap:5px;align-items:center;cursor:pointer}
+.gbar .legend{padding:0}
+#ginfo{position:fixed;right:18px;bottom:18px;width:330px;z-index:4;display:none;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+svg text{font:11px Inter,"Segoe UI",sans-serif;fill:#cbd5e1;pointer-events:none}
+.colh{fill:#64748b!important;font-size:10px!important;letter-spacing:.06em;text-transform:uppercase}
+.gn{cursor:pointer}
+.gn rect{fill:#0f1626;stroke-width:1.2}
+.gn:hover rect{fill:#162238}
+.ge{fill:none;stroke:#3b4a63;stroke-opacity:.28;stroke-width:1}
+.focus .gn{opacity:.13}.focus .gn.sel,.focus .gn.up,.focus .gn.down{opacity:1}
+.focus .ge{stroke-opacity:.03}
+.gn.sel rect{fill:#1e3a5f;stroke:#fff!important;stroke-width:2}
+.gn.up rect{fill:#0c2536;stroke:var(--up)!important}
+.gn.down rect{fill:#2a1116;stroke:var(--down)!important}
+.ge.up{stroke:var(--up);stroke-opacity:.85!important;stroke-width:1.6}
+.ge.down{stroke:var(--down);stroke-opacity:.85!important;stroke-width:1.6}
+.searching .gn:not(.match){opacity:.15}.searching .gn.match rect{stroke:#facc15!important;stroke-width:2}
+/* cascade */
+.rank{padding:6px 8px 40px}
+.ri{padding:7px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.ri:hover{background:#121a2b}.ri.sel{background:#16213a;border-color:#2b4a74}
+.ri .top{display:flex;gap:7px;align-items:center}
+.ri .bar{height:4px;border-radius:4px;background:#1e293b;margin-top:5px;overflow:hidden}
+.ri .bar i{display:block;height:100%}
+.ccols{display:flex;gap:14px;overflow-x:auto;padding:6px 2px 16px;align-items:flex-start}
+.ccol{min-width:220px;max-width:240px;flex:none}
+.ccol h5{margin:0 0 8px;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.cc{display:flex;gap:7px;align-items:center;background:var(--panel);border:1px solid var(--line);border-inline-start:3px solid;border-radius:8px;padding:6px 9px;margin-bottom:6px;cursor:pointer;font-size:12px}
+.cc:hover{border-color:#3b82f6}
+.cc.origin{background:#2a1116;border-color:#7f1d1d}
+.cc.chain{background:#2a1116;border-color:#f87171;box-shadow:0 0 0 1px #f87171}
+.cc small{display:block;color:var(--dim);font-size:10px}
+.carr{align-self:center;color:#7f1d1d;font-size:20px;flex:none}
+.gbars .row{display:grid;grid-template-columns:150px 1fr 34px;gap:8px;align-items:center;margin:4px 0;font-size:12px}
+.gbars .track{height:8px;background:#1e293b;border-radius:6px;overflow:hidden}.gbars .track i{display:block;height:100%}
+/* workflows */
+.wi{padding:10px 12px;border-radius:9px;cursor:pointer;margin:4px 8px;border:1px solid transparent}
+.wi:hover{background:#121a2b}.wi.sel{background:#16213a;border-color:#2b4a74}
+.wi b{display:block}.wi span{font-size:12px;color:var(--mute)}
+.lanes{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 18px}
+.flow{max-width:900px}
+.step{display:grid;grid-template-columns:40px 1fr;gap:12px}
+.sn{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;border:2px solid;background:#0b0f19}
+.sb{background:var(--panel);border:1px solid var(--line);border-inline-start:4px solid;border-radius:10px;padding:10px 14px}
+.sb.hit{box-shadow:0 0 0 2px #facc15}
+.sb h4{margin:2px 0 4px;font-size:14px}
+.sk{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.arrow{margin-inline-start:16px;border-inline-start:2px dashed #334155;height:30px;position:relative}
+.arrow:after{content:"";position:absolute;inset-inline-start:-6px;bottom:-2px;border:5px solid transparent;border-top:7px solid #475569}
+.arrow span{position:absolute;inset-inline-start:14px;top:6px;font:11px var(--mono);color:#7dd3fc}
+/* overview */
+.ov{max-width:1280px;margin:0 auto;padding:24px 28px 60px}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:14px 0 22px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi b{font-size:24px;display:block}.kpi span{color:var(--mute);font-size:12px}
+.layer{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--panel)}
+.layer .lt{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px}
+.layer .lt b{font-size:13px}.layer .lt span{color:var(--dim);font-size:12px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vdown{text-align:center;color:#334155;font-size:18px;line-height:22px}
+.ins{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.ins ol{margin:6px 0 0;padding-inline-start:18px}.ins li{margin:3px 0}
+.notes li{margin:6px 0;color:#cbd5e1}
+.notes b{color:#fff}
+/* language switch & RTL */
+.lang{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--line2);border-radius:999px;background:#0f1626;flex:none}
+.lang button{background:none;border:0;color:var(--mute);padding:4px 11px;border-radius:999px;cursor:pointer;font:600 12px/1.25 Inter,"Segoe UI",system-ui,sans-serif}
+.lang button[lang=ar]{font-family:var(--ar);font-size:13px}
+.lang button:hover{color:var(--ink)}
+.lang button[aria-pressed=true]{background:#13213a;color:#fff;box-shadow:inset 0 0 0 1px #23406b}
+.lang button:focus-visible{outline:2px solid #3b82f6;outline-offset:1px}
+bdi,.mono{unicode-bidi:isolate}
+html[lang=ar] body{font-family:var(--ar);font-size:14px;line-height:1.6}
+html[lang=ar] .dd,html[lang=ar] .wi span,html[lang=ar] .cc small,html[lang=ar] .lg,html[lang=ar] .treehint{font-size:12px}
+html[lang=ar] h3,html[lang=ar] .ccol h5,html[lang=ar] .sk,html[lang=ar] .colh{letter-spacing:0!important}
+html[lang=ar] svg .colh,.arrow span.tr{font-family:var(--ar)}
+[dir=rtl] .mono{direction:ltr}
+[dir=rtl] div.mono{text-align:right}
+[dir=rtl] .dir>summary:before{content:"◂"}
+[dir=rtl] .dir[open]>summary:before{transform:rotate(-90deg)}
+[dir=rtl] .carr{transform:scaleX(-1)}
+/* the graph scroller stays LTR so scroll offsets are positive; the SVG itself is mirrored in JS */
+#v-graph{direction:ltr}
+[dir=rtl] .gbar,[dir=rtl] #ginfo{direction:rtl}
+[dir=rtl] #ginfo{right:auto;left:18px}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.ins{grid-template-columns:1fr}.search input{width:220px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="mk">CL</div><div><span data-t="logo">CyberLaps · Architecture Map</span><small>React 18 · Phaser 3 · Zustand · xterm.js · Zod · Vite</small></div></div>
+  <div class="stats" id="stats"></div>
+  <div class="search"><input id="q" placeholder="Search files, roles, workflows…" data-tph="search.ph" data-taria="search.aria" aria-label="Search files, roles and workflows (press /)" autocomplete="off" /><kbd>/</kbd></div>
+  <div class="lang" id="lang" role="group" data-taria="lang.aria" aria-label="Interface language">
+    <button type="button" data-lang="en" lang="en" aria-pressed="true">EN</button>
+    <button type="button" data-lang="ar" lang="ar" dir="rtl" aria-pressed="false">العربية</button>
+  </div>
+</header>
+<nav id="tabs">
+  <button data-v="overview" class="on" data-t="tab.overview">Overview</button>
+  <button data-v="explorer" data-t="tab.explorer">File Explorer</button>
+  <button data-v="graph" data-t="tab.graph">Dependency Graph</button>
+  <button data-v="cascade" data-t="tab.cascade">Cascade Failure Map</button>
+  <button data-v="workflows" data-t="tab.workflows">Workflows</button>
+</nav>
+<main>
+  <section class="view on" id="v-overview"><div class="ov" id="ov"></div></section>
+  <section class="view" id="v-explorer">
+    <aside class="side"><div class="legend" id="lg1"></div><div class="treehint"><span><i style="background:#38bdf8"></i><span data-t="hint.uses">uses (direct)</span></span><span><i style="background:#f87171"></i><span data-t="hint.breaks">breaks if selected fails</span></span></div><div class="tree" id="tree"></div></aside>
+    <div class="pane" id="detail"></div>
+  </section>
+  <section class="view" id="v-graph">
+    <div class="gbar">
+      <label><input type="checkbox" id="gt" /> <span data-t="g.tests">Tests</span></label>
+      <label><input type="checkbox" id="gc" checked /> <span data-t="g.content">Content JSON</span></label>
+      <span class="dim">|</span>
+      <span class="dim" style="font-size:12px" data-th="g.hint">Leaves (left) → entry points (right). Click a node: <b style="color:#38bdf8">blue</b> = what it relies on, <b style="color:#f87171">red</b> = what breaks.</span>
+      <div class="legend" id="lg2"></div>
+    </div>
+    <div id="gwrap"></div>
+    <div class="card" id="ginfo"></div>
+  </section>
+  <section class="view" id="v-cascade">
+    <aside class="side"><div style="padding:12px 14px 4px" class="dim" data-t="casc.side">Ranked by blast radius (transitive dependents, excluding tests).</div><div class="rank" id="rank"></div></aside>
+    <div class="pane" id="casc"></div>
+  </section>
+  <section class="view" id="v-workflows">
+    <aside class="side" id="wlist"></aside>
+    <div class="pane" id="wflow"></div>
+  </section>
+</main>
+
+<script>
+"use strict";
+/* ───────────────────────────── DATA ───────────────────────────── */
+const GROUPS = {
+  app:{label:"App Shell & Routing",ar:"هيكل التطبيق والتوجيه",color:"#a78bfa"},
+  ui:{label:"React Components",ar:"مكوّنات React",color:"#38bdf8"},
+  terminal:{label:"Terminal (xterm)",ar:"الطرفية (xterm)",color:"#a3e635"},
+  game:{label:"Phaser Stage",ar:"مسرح Phaser",color:"#fb923c"},
+  state:{label:"State & Persistence",ar:"الحالة والحفظ",color:"#fbbf24"},
+  domain:{label:"Simulation Engine",ar:"محرك المحاكاة",color:"#34d399"},
+  audio:{label:"Audio",ar:"الصوت",color:"#f472b6"},
+  i18n:{label:"i18n (EN/AR)",ar:"التوطين (EN/AR)",color:"#2dd4bf"},
+  base:{label:"Types & Utils",ar:"الأنواع والأدوات المساعدة",color:"#818cf8"},
+  content:{label:"Content (JSON)",ar:"المحتوى (JSON)",color:"#facc15"},
+  test:{label:"Tests",ar:"الاختبارات",color:"#64748b"},
+  config:{label:"Config & Tooling",ar:"الإعدادات وأدوات التطوير",color:"#94a3b8"},
+  asset:{label:"Assets",ar:"الأصول",color:"#78716c"},
+};
+const CN="~lib/cn.ts",I18N="~i18n/index.ts",AUD="~core/audio/index.ts",BTN="~components/ui/Button.tsx",BADGE="~components/ui/Badge.tsx",
+ICB="~components/ui/IconButton.tsx",PANEL="~components/ui/Panel.tsx",CONF="~components/ui/ConfirmDialog.tsx",DLG="~components/ui/Dialog.tsx",
+LT="~components/ui/LanguageToggle.tsx",LV="~core/levels/index.ts",PS="~core/state/progressStore.ts",SS="~core/state/stageStore.ts",
+US="~core/state/uiStore.ts",LS="~core/state/ledgerStore.ts",PRS="~core/state/profileStore.ts",AS="~core/state/audioStore.ts",
+ST="~core/persistence/storage.ts",TT="~types/topology.ts",TL="~types/level.ts",TLD="~types/ledger.ts",TP="~types/packet.ts",TA="~types/audio.ts",
+PARSER="~core/parser/index.ts",CT="~core/commands/types.ts",CNET="~core/commands/network.ts",IP="~lib/ip.ts",TXT="~lib/text.ts",
+TOOLS="~core/tools/catalog.ts",OBJ="~core/levels/objectives.ts",REG="~core/levels/registry.ts",ROUTE="~core/network/routing.ts",
+SVC="~core/network/services.ts",ANAT="~core/network/packetAnatomy.ts",THEME="~game/theme.ts",ISO="~game/objects/iso.ts",CMD="~core/commands/index.ts",
+TR="~i18n/translate.ts",MODC="~modules/catalog.ts",MODI="~modules/icons.ts",RECON="~components/landing/useReconSummary.ts",
+VOL="~components/audio/VolumeSlider.tsx",LSESS="~core/state/levelSession.ts",LANG="~i18n/languageStore.ts",JSOND="~json.d.ts",
+UIS="~components/ui/uiSound.ts";
+const LEVEL_TITLES=["Meet your network","Find a neighbor","Map the whole LAN","Knock on doors","Name the services","A second subnet","The quiet firewall","Quiet but alive","Match the jobs","Full recon"];
+const LEVEL_FILES=LEVEL_TITLES.map((_,i)=>`~content/levels/level-${String(i+1).padStart(2,"0")}.json`);
+
+/* [path, group, role, internalDeps, externalPkgs, extra] — "~" = src/ */
+const F = [
+["index.html","config","Vite HTML entry: dark shell, #root mount, loads src/main.tsx.",["~main.tsx"],[],{global:"Entry document — nothing loads without it."}],
+["package.json","config","Dependencies (react 18, phaser 3, zustand 5, zod, xterm 5, howler) and scripts: dev / build / typecheck / test.",[],[],{global:"Install, dev server, build and every test run."}],
+["package-lock.json","config","Locked dependency tree for reproducible installs.",[],[],{global:"Dependency resolution for every module."}],
+["vite.config.ts","config","Dev server (:5173), '@' → src alias, manual chunks (phaser / xterm / audio / react), Vitest node env.",[],["vite","@vitejs/plugin-react","vitest"],{global:"Every '@/…' import, bundling and the test runner."}],
+["tsconfig.json","config","TypeScript compiler options; `tsc -b` gates `npm run build`.",[],["typescript"],{global:"Typecheck and build of all .ts/.tsx files."}],
+["tailwind.config.ts","config","Tailwind theme tokens (palette, fonts, shadows) and content globs.",[],["tailwindcss"],{global:"Styling of every component (visual only — logic unaffected)."}],
+["postcss.config.js","config","PostCSS pipeline: tailwindcss + autoprefixer.",[],["postcss","autoprefixer"],{global:"CSS generation (visual only)."}],
+[".oxlintrc.json","config","Oxlint rules. Tooling only, no runtime impact.",[]],
+[".gitignore","config","Git ignore rules (build output, logs, OS metadata such as desktop.ini).",[]],
+["README.md","config","Product overview, feature list, run instructions.",[]],
+...["023008","023048","023103","023122","023221","023337","023353"].map(t=>[`ex photo/Screenshot 2026-10-12 ${t}.png`,"asset","UI reference screenshot (not used by the build).",[]]),
+
+/* entry & shell */
+["~main.tsx","app","React root: StrictMode render of <App/>, imports global CSS.",["~app/App.tsx","~index.css"],["react-dom"]],
+["~index.css","app","Tailwind layers, font faces, global and xterm styles.",[],["@fontsource-variable/inter","@fontsource-variable/cairo","@fontsource/jetbrains-mono"]],
+["~app/App.tsx","app","Root component: AudioProvider + RouterProvider; keeps <html lang/dir> in sync with language.",["~app/providers/AudioProvider.tsx","~app/router/index.tsx",I18N],["react-router-dom"]],
+["~app/router/index.tsx","app","Routes: / → LandingPage, /lab and /lab/:levelId → LabRoute, * → redirect home.",["~pages/LandingPage.tsx","~app/router/LabRoute.tsx"],["react-router-dom"]],
+["~app/router/LabRoute.tsx","app","Guards the level param (isLevelPlayable), sets the current level, renders AppLayout.",["~components/layout/AppLayout.tsx",PS],["react-router-dom"]],
+["~app/providers/AudioProvider.tsx","app","Pushes persisted audio settings into the audioManager singleton and connects playSfx as the UI sound handler.",[UIS,AUD,AS],["react"],{rt:"The only place UI primitives get wired to the audio engine: if it is not mounted, buttons simply stay silent."}],
+["~pages/LandingPage.tsx","app","Home page: hero, training-domain hub, operator panel, settings, login dialog.",["~components/landing/DomainHub.tsx","~components/landing/HeroSection.tsx","~components/landing/LoginDialog.tsx","~components/landing/OperatorAvatar.tsx","~components/landing/OperatorPanel.tsx","~components/landing/SettingsPanel.tsx","~components/layout/BrandMark.tsx",BTN,LT,AUD,PRS,I18N],["lucide-react","react-router-dom"]],
+
+/* components */
+["~components/agent/LabAgentModal.tsx","ui","Lab Agent tool-intro modal; auto-opens when a level introduces a new tool.",[BADGE,BTN,ICB,LV,PS,US,TOOLS,I18N],["lucide-react"]],
+["~components/audio/AudioToolbar.tsx","ui","Top-bar audio toggles (master / music / ambient) + volume sliders.",[ICB,AUD,AS,I18N,CN,VOL],["lucide-react"]],
+["~components/audio/VolumeSlider.tsx","ui","Accessible volume range input.",[I18N,CN]],
+["~components/hub/LevelMapMenu.tsx","ui","Level map dropdown: completed, unlocked, locked and coming-soon levels.",[BADGE,AUD,LV,PS,I18N,CN],["react-router-dom","lucide-react"]],
+["~components/inspector/PacketInspectorModal.tsx","ui","Pauses the simulation and shows a clicked packet's headers layer by layer.",[BADGE,BTN,ICB,LV,ANAT,PS,SS,US,I18N,CN,TT],["lucide-react"]],
+["~components/landing/DomainHub.tsx","ui","Training-module carousel (Recon live, others locked) + SectionHeading.",[BADGE,BTN,AUD,LV,I18N,CN,MODC,MODI,RECON],["react-router-dom","lucide-react"]],
+["~components/landing/HeroSection.tsx","ui","Landing hero with Start / Continue call-to-action.",[BTN,PRS,I18N,RECON],["react-router-dom"]],
+["~components/landing/LoginDialog.tsx","ui","Local demo sign-in / register form with validation (passwords never stored).",[BTN,DLG,AUD,PRS,I18N,CN]],
+["~components/landing/OperatorAvatar.tsx","ui","Operator avatar (initials / icon).",[PRS,CN]],
+["~components/landing/OperatorPanel.tsx","ui","Operator card: profile, current level, recon stats.",[BADGE,BTN,LV,PRS,I18N,"~components/landing/OperatorAvatar.tsx",RECON]],
+["~components/landing/SettingsPanel.tsx","ui","Audio, language, terminal dock and reset-all-progress settings.",[VOL,BTN,CONF,LT,AUD,AS,LSESS,US,I18N,CN]],
+["~components/landing/useReconSummary.ts","ui","Hook deriving progress and ledger stats for landing widgets.",[LS,PS,I18N]],
+["~components/layout/AppLayout.tsx","ui","Lab workspace shell: top bar, stage, resizable docked terminal, ledger, modals.",["~components/agent/LabAgentModal.tsx","~components/inspector/PacketInspectorModal.tsx","~components/ledger/ReconLedgerSidebar.tsx","~components/stage/VisualStageViewport.tsx","~components/terminal/TerminalPanel.tsx",AUD,US,CN,"~components/layout/ModuleTabs.tsx","~components/layout/PanelResizeHandle.tsx","~components/layout/TopBar.tsx"]],
+["~components/layout/BrandMark.tsx","ui","Logo + wordmark.",[CN]],
+["~components/layout/ModuleTabs.tsx","ui","Training-module tab strip.",[BADGE,I18N,CN,MODC,MODI]],
+["~components/layout/PanelResizeHandle.tsx","ui","Pointer-drag handle that resizes the terminal panel.",[I18N,CN]],
+["~components/layout/PhaseStepper.tsx","ui","Watch → Learn → Apply phase stepper.",[PS,I18N,CN,TL]],
+["~components/layout/TopBar.tsx","ui","Lab header: navigation, level map, phase stepper, audio, language, restart level.",["~components/audio/AudioToolbar.tsx","~components/hub/LevelMapMenu.tsx",BTN,CONF,ICB,LT,AUD,LSESS,PS,I18N,"~components/layout/BrandMark.tsx","~components/layout/PhaseStepper.tsx"]],
+["~components/ledger/LedgerAssetCard.tsx","ui","Card for one discovered asset (IP, MAC, ports, states).",[BADGE,I18N,TLD]],
+["~components/ledger/ReconLedgerSidebar.tsx","ui","Collapsible recon ledger: discovered assets sorted by IP; clear ledger.",[BADGE,BTN,CONF,ICB,LS,US,I18N,CN,IP,"~components/ledger/LedgerAssetCard.tsx"]],
+["~components/stage/ApplyStep.tsx","ui","Apply phase: live objective checklist, completion and next-level CTA.",[BADGE,BTN,LV,PS,I18N,CN,TT],["react-router-dom"]],
+["~components/stage/PhaserStage.tsx","ui","Canvas host; lazy-loads the Phaser game via dynamic import('@/game').",["~game/index.ts",I18N,CN],[],{rt:"Dynamic import isolates Phaser in its own chunk: a runtime crash inside the game leaves the React UI and terminal usable (build/typecheck still breaks)."}],
+["~components/stage/StageLegend.tsx","ui","Packet outcome colour legend.",[I18N,CN]],
+["~components/stage/VisualStageViewport.tsx","ui","Stage panel: phase content (watch / learn / apply), lessons, tool cards, Phaser canvas.",[BADGE,BTN,PANEL,LV,PS,SS,US,TOOLS,I18N,CN,TL,TT,"~components/stage/ApplyStep.tsx","~components/stage/PhaserStage.tsx","~components/stage/StageLegend.tsx","~components/stage/WalkthroughBar.tsx"]],
+["~components/stage/WalkthroughBar.tsx","ui","Watch-phase controls (play / pause / next / skip) + localized beat caption.",[BTN,ICB,LV,PS,SS,I18N,CN]],
+["~components/terminal/TerminalPanel.tsx","ui","Terminal panel chrome: dock switch, status badges; hosts XtermTerminal.",[BADGE,BTN,ICB,PANEL,PS,SS,US,I18N,"~components/terminal/XtermTerminal.tsx"]],
+["~components/terminal/XtermTerminal.tsx","ui","React wrapper that creates / disposes a TerminalSession on a div.",[CN,"~terminal/TerminalSession.ts"]],
+["~components/ui/Badge.tsx","ui","Tone-coloured badge primitive.",[CN]],
+["~components/ui/Button.tsx","ui","Button variants; click SFX through the optional uiSound hook (no audio-engine import).",[CN,TA,UIS]],
+["~components/ui/ConfirmDialog.tsx","ui","Confirm / cancel dialog for destructive actions.",[I18N,BTN,DLG]],
+["~components/ui/Dialog.tsx","ui","Accessible modal dialog primitive.",[CN,ICB]],
+["~components/ui/IconButton.tsx","ui","Icon-only button; click SFX through the optional uiSound hook.",[CN,TA,UIS]],
+["~components/ui/LanguageToggle.tsx","ui","EN ⇄ AR language switch; click SFX through the uiSound hook.",[I18N,CN,UIS]],
+["~components/ui/Panel.tsx","ui","Panel + PanelHeader surface primitives.",[CN]],
+["~components/ui/uiSound.ts","ui","Optional sound hook for UI primitives: setUiSoundHandler() / playUiSound(). Knows nothing about the audio engine.",[TA],[],{guard:"playUiSound() is a no-op until a handler is connected and swallows handler errors (logged once), so an audio failure can never block the click that triggered it."}],
+
+/* core: audio */
+["~core/audio/AudioManager.ts","audio","Howler-based singleton (class exported for tests): SFX playback, ambient pad, music, gain mixing. Seeds its settings from core/audio/defaults, never from the state layer.",[TA,"~core/audio/ambientPad.ts","~core/audio/defaults.ts","~core/audio/mix.ts","~core/audio/sfxRecipes.ts"],["howler"],{guard:"If the browser refuses to create an AudioContext, it logs once, stays silent and does not retry on later gestures (no leaked contexts). It imports nothing from core/state, so a store or storage failure cannot stop the engine from loading."}],
+["~core/audio/ambientPad.ts","audio","Web Audio generative ambient pad.",[]],
+["~core/audio/defaults.ts","audio","DEFAULT_AUDIO_SETTINGS: neutral leaf shared by AudioManager and audioStore (keeps data flow one-way).",[TA]],
+["~core/audio/index.ts","audio","Public audio API: audioManager + playSfx() (never throws).",[TA,"~core/audio/AudioManager.ts"],[],{guard:"playSfx() wraps playback in try/catch and reports each failing effect once: audio runtime errors never interrupt the terminal, the packet animation or a click."}],
+["~core/audio/mix.ts","audio","Pure gain math (master × channel × mute).",[TA]],
+["~core/audio/sfxRecipes.ts","audio","Synthesis recipes per SfxName.",[TA]],
+/* core: commands */
+["~core/commands/arpScan.ts","domain","Simulated arp-scan: sweeps the player's LAN CIDR, yields IP/MAC probes.",[PARSER,IP,CNET,CT]],
+["~core/commands/help.ts","domain","help command, per-command usage, typo suggestions.",[PARSER,TXT,TT,CT]],
+["~core/commands/index.ts","domain","runCommandLine(): parse → dispatch → CommandRun {steps, rejected, clearScreen}.",[PARSER,"~core/commands/arpScan.ts","~core/commands/help.ts","~core/commands/nmap.ts","~core/commands/ping.ts",CT]],
+["~core/commands/network.ts","domain","Shared sim helpers: addressing, LAN membership, RTT/TTL, drop points, wrong-IP tips.",[ROUTE,IP,TXT,TT,CT]],
+["~core/commands/nmap.ts","domain","Simulated nmap: host + port scans (-F, -p), port states and services.",[PARSER,SVC,IP,TLD,TT,CNET,CT]],
+["~core/commands/ping.ts","domain","Simulated ping: ICMP echo along the route — reply, drop or timeout.",[PARSER,TT,CNET,CT]],
+["~core/commands/types.ts","domain","Command contracts: CommandContext, CommandRun, Probe, OutputLine + print helpers.",[TLD,TP,TT]],
+/* core: levels */
+["~core/levels/index.ts","domain","Barrel: registry + objectives.",[REG,OBJ]],
+["~core/levels/objectives.ts","domain","Evidence model: verifiedFinds, evidenceOfProbe, mergeEvidence, evaluateObjectives, deviceIntel (fog-of-war).",[CT,TLD,TT]],
+["~core/levels/registry.ts","domain","Loads and zod-validates all level JSON at startup (buildLevelRegistry / buildComingSoonList); getLevelDefinition, getPlayerDevice, lists.",[...LEVEL_FILES,"~content/levels/coming-soon.json",TL,TT,"~core/levels/schema.ts",JSOND],[],{rt:"Built once when the module loads; progressStore imports it, so it still sits on the startup path of the whole app.",guard:"Each level file is validated inside its own try/catch: an invalid or duplicate level is skipped with a console warning and an invalid Coming Soon file yields an empty list, so the app and landing page still boot."}],
+["~core/levels/schema.ts","domain","Zod schemas for level files and coming-soon list.",[],["zod"]],
+/* core: network */
+["~core/network/packetAnatomy.ts","domain","describePacket(): per-layer header breakdown for the inspector.",[TP,TT,ROUTE,SVC]],
+["~core/network/routing.ts","domain","findDeviceByIp, routeHops across subnets and routers.",[TT]],
+["~core/network/services.ts","domain","Port ↔ service table; default and fast scan port sets.",[]],
+/* core: parser */
+["~core/parser/ast.ts","domain","Token / AST / Diagnostic types + flag helpers.",[IP]],
+["~core/parser/grammar.ts","domain","Command specs (ping, arp-scan, nmap, help, clear…) and flag rules.",["~core/parser/ast.ts"]],
+["~core/parser/index.ts","domain","Barrel: ast, grammar, parseCommand, tokenize.",["~core/parser/ast.ts","~core/parser/grammar.ts","~core/parser/parse.ts","~core/parser/tokenize.ts"]],
+["~core/parser/parse.ts","domain","parseCommand(): tokens → validated AST with diagnostics and 'did you mean'.",[SVC,IP,TXT,"~core/parser/ast.ts","~core/parser/grammar.ts","~core/parser/tokenize.ts"]],
+["~core/parser/tokenize.ts","domain","Lexer with source spans and diagnostics.",["~core/parser/ast.ts"]],
+/* core: tools / persistence / state */
+["~core/tools/catalog.ts","domain","Zod-validated tool catalog (ping, arp-scan, nmap) from JSON.",["~content/tools/catalog.json",JSOND],["zod"]],
+["~core/persistence/storage.ts","state","localStorage adapter: cyberlaps: key prefix, legacy cyber-lab: migration, in-memory fallback.",[],["zustand"],{rt:"If localStorage is blocked it silently falls back to memory: the app keeps running but progress, ledger, profile and settings are lost on reload."}],
+["~core/state/audioStore.ts","state","Persisted audio settings (volumes, mutes), seeded from core/audio/defaults (re-exported).",[ST,TA,"~core/audio/defaults.ts"],["zustand"]],
+["~core/state/ledgerStore.ts","state","Persisted recon ledger: upsert / merge per IP, remove by level, clear.",[ST,TLD,PS],["zustand"]],
+["~core/state/levelSession.ts","state","Cross-store actions: restartLevel(id), resetAllProgress().",[TL,LS,PS]],
+["~core/state/profileStore.ts","state","Persisted local operator profile; register / login validation.",[ST],["zustand"]],
+["~core/state/progressStore.ts","state","Persisted progress hub: current level, phase, evidence, completion, unlocks.",[REG,OBJ,ST,TL],["zustand"],{rt:"Subscribed to directly by NetworkScene and TerminalSession: level / phase changes rebuild the stage and reset the terminal flow."}],
+["~core/state/stageStore.ts","state","Ephemeral stage bus: packet outbox, settle times, recent packets (50), walkthrough state.",[TL,TP],["zustand"],{rt:"The only contract between the terminal and Phaser: TerminalSession.emitPackets() → outbox → NetworkScene.drainOutbox() → PacketFlowSystem → packetSettled() → settledAt → terminal prints the result and records evidence."}],
+["~core/state/uiStore.ts","state","Persisted UI layout (ledger, terminal dock / size) + active modal and simulation pause.",[ST],["zustand"],{rt:"activeModal sets simulationPaused; NetworkScene subscribes and freezes packet animation."}],
+
+/* game */
+["~game/createStageGame.ts","game","Builds the Phaser.Game with NetworkScene; returns a handle (resize / destroy).",["~game/scenes/NetworkScene.ts"],["phaser"]],
+["~game/index.ts","game","Public game entry, loaded lazily as its own chunk.",["~game/createStageGame.ts"]],
+["~game/theme.ts","game","Palette, depth layers, outcome colours, fonts, colour math.",[TT]],
+["~game/objects/DeviceNode.ts","game","One device: clay model or mystery crate, labels, highlight, reveal.",[OBJ,TT,THEME,"~game/objects/clayTextures.ts","~game/objects/deviceModels.ts",ISO],["phaser"]],
+["~game/objects/TopologyView.ts","game","Draws the diorama board and subnets; lays out DeviceNodes.",[OBJ,TT,THEME,"~game/objects/DeviceNode.ts",ISO],["phaser"]],
+["~game/objects/clayPainter.ts","game","Canvas 2D clay-shading primitives.",[THEME,ISO]],
+["~game/objects/clayTextures.ts","game","Generates and caches textures for models, crates, plinths.",[TT,THEME,"~game/objects/deviceModels.ts","~game/objects/clayPainter.ts"]],
+["~game/objects/deviceModels.ts","game","Per-DeviceKind isometric model painters.",[TT,THEME,"~game/objects/clayPainter.ts",ISO]],
+["~game/objects/iso.ts","game","Isometric projection math + slab / grid / shadow drawing.",[THEME]],
+["~game/scenes/NetworkScene.ts","game","Main scene: bridges stores ↔ Phaser (packets, walkthrough, fog-of-war reveal, language).",[LV,PS,SS,US,LANG,TR,TT,"~game/objects/DeviceNode.ts","~game/objects/TopologyView.ts","~game/systems/PacketFlowSystem.ts","~game/walkthrough/WalkthroughDirector.ts"],["phaser"],{rt:"If the scene never calls stageLoaded(), stage.ready stays false and TerminalSession prints results instantly (graceful). Walkthrough, packet clicks and device reveal stop working."}],
+["~game/systems/PacketFlowSystem.ts","game","Animates packet flows hop by hop with outcome colours, SFX and click-to-inspect.",[AUD,ROUTE,TA,TP,TT,"~game/objects/DeviceNode.ts","~game/objects/TopologyView.ts",THEME],["phaser"],{rt:"The terminal waits for packetSettled() per probe; a stalled animation holds that command's output until the run is cancelled or the level changes."}],
+["~game/walkthrough/WalkthroughDirector.ts","game","Schedules walkthrough beats (play / pause / step / skip) via an injectable Scheduler.",[TT]],
+
+/* terminal */
+["~terminal/TerminalSession.ts","terminal","xterm.js session: line editing, history, completion; runs commands and syncs packets, evidence, ledger.",[AUD,CMD,LV,PARSER,LS,PS,TL,SS,"~terminal/ansi.ts"],["@xterm/xterm","@xterm/addon-fit"]],
+["~terminal/ansi.ts","terminal","xterm theme, prompt, OutputLine → ANSI rendering.",[CMD],["@xterm/xterm"]],
+
+/* i18n */
+["~i18n/index.ts","i18n","useT(), useLanguage(), useDocumentLanguage(); re-exports localizers.",[LANG,TR,"~i18n/levels.ts","~i18n/tools.ts","~i18n/lessons.ts"],["react"]],
+["~i18n/languageStore.ts","i18n","Persisted language choice.",[ST,TR],["zustand"],{rt:"NetworkScene subscribes and relabels device nodes on change."}],
+["~i18n/lessons.ts","i18n","Per-level lesson content (EN / AR).",[TL,TR]],
+["~i18n/levels.ts","i18n","Arabic overrides for level titles, objectives and walkthrough beats.",[TL,TT,TR]],
+["~i18n/tools.ts","i18n","Arabic tool catalog strings; localizeTool().",[TOOLS,TR]],
+["~i18n/translate.ts","i18n","translate(), plurals, number formatting, text direction.",["~i18n/messages/ar.ts","~i18n/messages/en.ts"]],
+["~i18n/messages/en.ts","i18n","English dictionary — source of the MessageKey type.",[]],
+["~i18n/messages/ar.ts","i18n","Arabic dictionary typed against MessageKey.",["~i18n/messages/en.ts"]],
+
+/* modules / lib / types */
+["~modules/catalog.ts","base","Training modules list (Recon live, others coming soon).",[I18N]],
+["~modules/icons.ts","base","Module id → lucide icon map.",[MODC],["lucide-react"]],
+["~lib/cn.ts","base","clsx + tailwind-merge className helper.",[],["clsx","tailwind-merge"]],
+["~lib/ip.ts","base","IPv4 / CIDR math (parse, contains, host count, compare).",[]],
+["~lib/text.ts","base","editDistance / closestMatch for suggestions.",[]],
+["~types/audio.ts","base","SfxName, SfxOptions, AudioSettings.",[]],
+["~types/ledger.ts","base","LedgerAsset, LedgerPort; re-exports PortState from topology (one-way import).",[TL,TT]],
+["~types/level.ts","base","LevelId, LevelPhase.",[]],
+["~types/packet.ts","base","PacketRequest, PacketFlow.",[TT]],
+["~types/topology.ts","base","LevelDefinition, NetworkDevice, Topology, DeviceKind, PortState, objectives, walkthrough beats, PacketOutcome.",[TL]],
+["~json.d.ts","base","Ambient typing for *.json imports (unknown → validated with zod).",[]],
+
+/* content */
+...LEVEL_FILES.map((p,i)=>[p,"content",`Level ${i+1} — “${LEVEL_TITLES[i]}”: topology, devices, ports, objectives, walkthrough beats.`,[]]),
+["~content/levels/coming-soon.json","content","Announced levels 11+ (title, summary).",[]],
+["~content/tools/catalog.json","content","Tool definitions: ping, arp-scan, nmap.",[]],
+
+/* tests */
+["~components/ui/uiSound.test.ts","test","UI sound hook: silent without a handler, swallows handler errors, scoped cleanup.",[UIS],["vitest"]],
+["~core/audio/AudioManager.test.ts","test","AudioManager with a fake AudioContext: unlock, throttling, mute, music, backgrounding, unsupported / failing context; playSfx never throws.",[AS,"~core/audio/AudioManager.ts",AUD],["vitest"]],
+["~core/audio/mix.test.ts","test","Gain mixing math.",[AS,TA,"~core/audio/mix.ts"],["vitest"]],
+["~core/commands/commands.test.ts","test","Command runs against real levels (output, probes, rejections).",[LV,TL,CMD],["vitest"]],
+["~core/levels/objectives.test.ts","test","Every level's objectives are provable through commands.",[CMD,PS,TL,TT,OBJ,REG],["vitest"]],
+["~core/levels/registry.test.ts","test","Level JSON validates; playable count matches; malformed, duplicate or all-broken files are skipped and an invalid Coming Soon file falls back to empty.",["~content/levels/level-01.json","~content/levels/level-02.json",PS,REG,"~core/levels/schema.ts"],["vitest"]],
+["~core/network/packetAnatomy.test.ts","test","Header layers for representative packets.",[LV,ANAT],["vitest"]],
+["~core/network/routing.test.ts","test","Device lookup and multi-hop routes.",[TT,ROUTE],["vitest"]],
+["~core/parser/parse.test.ts","test","Tokenizer / parser / grammar diagnostics.",["~core/parser/ast.ts","~core/parser/parse.ts"],["vitest"]],
+["~core/state/ledgerStore.test.ts","test","Asset upsert / merge, port merge and sort, removal by level, clear.",[LS,PS],["vitest"]],
+["~core/state/levelSession.test.ts","test","Restarting one level vs. resetting all progress across ledger and progress stores.",[LS,LSESS,PS],["vitest"]],
+["~core/state/progressStore.test.ts","test","Evidence merge, completion, save migration.",[OBJ,PS],["vitest"]],
+["~core/state/profileStore.test.ts","test","Registration validation and login.",[PRS],["vitest"]],
+["~core/state/stageStore.test.ts","test","Packet ids, outbox drain, 50-packet history, settle times and every walkthrough transition.",[TP,SS],["vitest"]],
+["~core/state/uiStore.test.ts","test","Ledger / dock toggles, terminal size clamping, modal pause and persisted fields.",[US],["vitest"]],
+["~core/tools/catalog.test.ts","test","Catalog ↔ command parity across levels.",[CMD,LV,TOOLS],["vitest"]],
+["~game/walkthrough/WalkthroughDirector.test.ts","test","Beat scheduling with a fake scheduler.",[TT,"~game/walkthrough/WalkthroughDirector.ts"],["vitest"]],
+["~i18n/content.test.ts","test","EN / AR parity for messages, levels, tools, lessons.",[LV,ANAT,TOOLS,"~i18n/lessons.ts","~i18n/levels.ts","~i18n/messages/ar.ts","~i18n/messages/en.ts","~i18n/tools.ts"],["vitest"]],
+];
+
+const DIRS={
+  "src":"Application source","src/app":"Root component, providers, router","src/app/router":"Route table + level guard","src/app/providers":"Context / side-effect providers",
+  "src/pages":"Route-level pages","src/components":"React UI","src/components/ui":"Design-system primitives","src/components/layout":"Lab shell & chrome",
+  "src/components/landing":"Landing page sections","src/components/stage":"Visual stage panel","src/components/terminal":"Terminal panel","src/components/ledger":"Recon ledger",
+  "src/components/agent":"Lab Agent modal","src/components/inspector":"Packet inspector","src/components/hub":"Level map","src/components/audio":"Audio controls",
+  "src/core":"Framework-free engine & state","src/core/commands":"Simulated CLI tools","src/core/parser":"Command language","src/core/levels":"Level registry & objectives",
+  "src/core/network":"Routing, services, packet anatomy","src/core/state":"Zustand stores","src/core/audio":"Sound engine","src/core/tools":"Tool catalog","src/core/persistence":"Storage adapter",
+  "src/game":"Phaser 3 stage (lazy chunk)","src/game/objects":"Isometric clay rendering","src/game/scenes":"Phaser scenes","src/game/systems":"Packet animation","src/game/walkthrough":"Watch-phase director",
+  "src/terminal":"xterm.js session","src/i18n":"EN/AR localization","src/i18n/messages":"Dictionaries","src/content":"Authored JSON data","src/content/levels":"Level definitions","src/content/tools":"Tool catalog data",
+  "src/types":"Shared domain types","src/lib":"Pure utilities","src/modules":"Training-domain catalog","ex photo":"Reference screenshots",
+};
+
+const FEATURES=[
+  {name:"Landing / Home",ar:"الصفحة الرئيسية",files:["src/pages/LandingPage.tsx"]},
+  {name:"Lab workspace",ar:"مساحة عمل المختبر",files:["src/components/layout/AppLayout.tsx","src/app/router/LabRoute.tsx"]},
+  {name:"Terminal & commands",ar:"الطرفية والأوامر",files:["src/terminal/TerminalSession.ts","src/components/terminal/TerminalPanel.tsx"]},
+  {name:"Visual Stage (Phaser)",ar:"المسرح المرئي (Phaser)",files:["src/game/scenes/NetworkScene.ts","src/components/stage/PhaserStage.tsx"]},
+  {name:"Watch walkthrough",ar:"جولة المشاهدة التوضيحية",files:["src/game/walkthrough/WalkthroughDirector.ts","src/components/stage/WalkthroughBar.tsx"]},
+  {name:"Packet Inspector",ar:"فاحص الحزم",files:["src/components/inspector/PacketInspectorModal.tsx"]},
+  {name:"Recon Ledger",ar:"سجل الاستطلاع",files:["src/components/ledger/ReconLedgerSidebar.tsx"]},
+  {name:"Objectives & progression",ar:"الأهداف والتقدّم",files:["src/components/stage/ApplyStep.tsx","src/core/state/progressStore.ts"]},
+  {name:"Lab Agent tool intros",ar:"تعريف وكيل المختبر بالأدوات",files:["src/components/agent/LabAgentModal.tsx"]},
+  {name:"Level map & navigation",ar:"خريطة المستويات والتنقّل",files:["src/components/hub/LevelMapMenu.tsx","src/app/router/index.tsx"]},
+  {name:"Audio",ar:"الصوت",files:["src/core/audio/AudioManager.ts","src/app/providers/AudioProvider.tsx"]},
+  {name:"EN/AR + RTL",ar:"EN/AR + RTL",files:["src/i18n/translate.ts","src/i18n/index.ts"]},
+  {name:"Local accounts",ar:"الحسابات المحلية",files:["src/components/landing/LoginDialog.tsx","src/core/state/profileStore.ts"]},
+  {name:"Persistence",ar:"الحفظ الدائم",files:["src/core/persistence/storage.ts"]},
+];
+
+const KINDS={user:{l:"User",ar:"المستخدم",c:"#f472b6"},ui:{l:"React UI",ar:"واجهة React",c:"#38bdf8"},engine:{l:"Engine",ar:"المحرك",c:"#34d399"},state:{l:"Store",ar:"المخزن",c:"#fbbf24"},render:{l:"Render",ar:"العرض",c:"#fb923c"},data:{l:"Data",ar:"البيانات",c:"#facc15"},test:{l:"Tests",ar:"الاختبارات",c:"#94a3b8"}};
+const s=p=>"src/"+p;
+const WORKFLOWS=[
+{t:"Terminal command → simulation → evidence",d:"The core learning loop: a typed command becomes animated packets, ledger entries and objective progress.",steps:[
+ {k:"user",t:"Type a command",d:"e.g. `nmap -F 10.0.0.0/24` in the docked terminal and press Enter.",f:[s("components/terminal/XtermTerminal.tsx"),s("terminal/TerminalSession.ts")],a:"execute(source)"},
+ {k:"engine",t:"Resolve level context",d:"currentLevelId → getLevelDefinition() + getPlayerDevice() build the CommandContext.",f:[s("terminal/TerminalSession.ts"),s("core/state/progressStore.ts"),s("core/levels/registry.ts")],a:"runCommandLine()"},
+ {k:"engine",t:"Parse",d:"tokenize → parseCommand → grammar validation; diagnostics and 'did you mean' suggestions on errors.",f:[s("core/parser/tokenize.ts"),s("core/parser/parse.ts"),s("core/parser/grammar.ts"),s("lib/text.ts")],a:"CommandAst"},
+ {k:"engine",t:"Simulate",d:"Dispatch to runPing / runArpScan / runNmap / runHelp. Routing, services and CIDR math produce Probes (packet + output).",f:[s("core/commands/index.ts"),s("core/commands/ping.ts"),s("core/commands/arpScan.ts"),s("core/commands/nmap.ts"),s("core/commands/network.ts"),s("core/network/routing.ts"),s("core/network/services.ts"),s("lib/ip.ts")],a:"CommandRun{steps}"},
+ {k:"state",t:"Record command + print",d:"recordEvidence({commands}); print steps rendered as ANSI immediately; rejected runs play the reject SFX.",f:[s("core/state/progressStore.ts"),s("terminal/ansi.ts")],a:"emitPackets()"},
+ {k:"state",t:"Queue packets",d:"stageStore.emitPackets() returns PacketFlows and places them in the outbox.",f:[s("core/state/stageStore.ts")],a:"store subscription"},
+ {k:"render",t:"Animate on stage",d:"NetworkScene drains the outbox; PacketFlowSystem animates each hop with outcome colours and SFX, then calls packetSettled(id).",f:[s("game/scenes/NetworkScene.ts"),s("game/systems/PacketFlowSystem.ts"),s("core/audio/index.ts")],a:"settledAt[id]"},
+ {k:"engine",t:"Land probes",d:"Terminal watches settledAt and prints each probe's output in settle order (instantly if the stage isn't ready).",f:[s("terminal/TerminalSession.ts"),s("core/state/stageStore.ts")],a:"verifiedFinds / evidenceOfProbe"},
+ {k:"state",t:"Commit findings",d:"ledgerStore.upsertAsset() for verified hosts; progressStore.recordEvidence() → objectivesMet() marks the level complete.",f:[s("core/levels/objectives.ts"),s("core/state/ledgerStore.ts"),s("core/state/progressStore.ts")],a:"re-render"},
+ {k:"render",t:"UI reacts",d:"ApplyStep ticks objectives, ledger lists assets, DeviceNodes reveal identity (deviceIntel), LevelMapMenu unlocks the next level, terminal announces completion.",f:[s("components/stage/ApplyStep.tsx"),s("components/ledger/ReconLedgerSidebar.tsx"),s("game/objects/DeviceNode.ts"),s("components/hub/LevelMapMenu.tsx")]},
+]},
+{t:"App boot & routing",d:"From index.html to the lab workspace.",steps:[
+ {k:"user",t:"Open the app",d:"Browser loads index.html; Vite serves the module graph (Phaser deferred).",f:["index.html","vite.config.ts"],a:"<script type=module>"},
+ {k:"ui",t:"Mount React",d:"main.tsx renders <App/> in StrictMode and loads global CSS + fonts.",f:[s("main.tsx"),s("index.css")],a:"module init"},
+ {k:"state",t:"Hydrate stores",d:"Zustand persist reads cyberlaps:* keys through getBrowserStorage(); legacy cyber-lab:* keys migrated once; memory fallback if blocked.",f:[s("core/persistence/storage.ts"),s("core/state/progressStore.ts"),s("core/state/uiStore.ts"),s("core/state/ledgerStore.ts"),s("core/state/profileStore.ts"),s("core/state/audioStore.ts"),s("i18n/languageStore.ts")],a:"render"},
+ {k:"ui",t:"App shell",d:"AudioProvider syncs settings → audioManager and connects the UI sound handler; useDocumentLanguage sets <html lang dir>.",f:[s("app/App.tsx"),s("app/providers/AudioProvider.tsx"),s("components/ui/uiSound.ts"),s("i18n/index.ts")],a:"RouterProvider"},
+ {k:"ui",t:"Route",d:"/ → LandingPage · /lab/:levelId → LabRoute (redirects if the level isn't playable) · * → /.",f:[s("app/router/index.tsx"),s("app/router/LabRoute.tsx"),s("pages/LandingPage.tsx")],a:"<AppLayout/>"},
+ {k:"render",t:"Lab workspace",d:"TopBar, VisualStageViewport, resizable TerminalPanel, ReconLedgerSidebar, LabAgent & Inspector modals.",f:[s("components/layout/AppLayout.tsx"),s("components/layout/TopBar.tsx"),s("components/stage/VisualStageViewport.tsx"),s("components/terminal/TerminalPanel.tsx"),s("components/ledger/ReconLedgerSidebar.tsx")]},
+]},
+{t:"Watch-phase walkthrough",d:"Scripted packet demo that opens every level.",steps:[
+ {k:"ui",t:"Enter level",d:"LabRoute sets the level; progressStore.phase = 'watch'.",f:[s("app/router/LabRoute.tsx"),s("core/state/progressStore.ts")],a:"import('@/game')"},
+ {k:"render",t:"Lazy-load stage",d:"PhaserStage waits for fonts, dynamically imports the game chunk → createStageGame → NetworkScene.",f:[s("components/stage/PhaserStage.tsx"),s("game/index.ts"),s("game/createStageGame.ts"),s("game/scenes/NetworkScene.ts")],a:"getLevelDefinition()"},
+ {k:"data",t:"Build the map",d:"TopologyView draws subnets and DeviceNodes; undiscovered devices render as '?' crates.",f:[s("game/objects/TopologyView.ts"),s("game/objects/DeviceNode.ts"),s("game/objects/clayTextures.ts"),s("game/objects/deviceModels.ts"),s("game/objects/iso.ts")],a:"stageLoaded()"},
+ {k:"state",t:"Start demo",d:"stageLoaded(levelId, beatCount); if phase is 'watch' → playWalkthrough().",f:[s("core/state/stageStore.ts")],a:"subscription"},
+ {k:"engine",t:"Run beats",d:"WalkthroughDirector schedules beats from the level JSON; each beat emits packets and a caption (setWalkthroughBeat).",f:[s("game/walkthrough/WalkthroughDirector.ts"),...LEVEL_FILES.slice(0,1).map(x=>"src/"+x.slice(1))],a:"caption"},
+ {k:"user",t:"Control playback",d:"WalkthroughBar next / pause / skip / replay → stageStore actions → scene subscription.",f:[s("components/stage/WalkthroughBar.tsx"),s("core/state/stageStore.ts")],a:"finishWalkthrough()"},
+ {k:"render",t:"Advance phase",d:"Captions localized via localizeBeat; learner moves Watch → Learn → Apply with PhaseStepper.",f:[s("i18n/levels.ts"),s("components/layout/PhaseStepper.tsx")]},
+]},
+{t:"Packet inspection",d:"Click a moving packet to freeze time and read its headers.",steps:[
+ {k:"user",t:"Click a packet",d:"Pointer hit on an in-flight packet sprite.",f:[s("game/systems/PacketFlowSystem.ts")],a:"inspect(packetId)"},
+ {k:"state",t:"Open modal",d:"uiStore.openModal({kind:'packetInspector'}) → simulationPaused = true.",f:[s("game/scenes/NetworkScene.ts"),s("core/state/uiStore.ts")],a:"subscription"},
+ {k:"render",t:"Freeze stage",d:"Scene pauses all packet tweens while the modal is open.",f:[s("game/scenes/NetworkScene.ts")],a:"recentPackets"},
+ {k:"engine",t:"Describe packet",d:"Inspector finds the flow in stageStore.recentPackets (last 50); describePacket() builds L2–L7 layers via routing + services.",f:[s("components/inspector/PacketInspectorModal.tsx"),s("core/state/stageStore.ts"),s("core/network/packetAnatomy.ts"),s("core/network/routing.ts"),s("core/network/services.ts")],a:"closeModal()"},
+ {k:"ui",t:"Resume",d:"Closing clears activeModal; simulation resumes.",f:[s("core/state/uiStore.ts")]},
+]},
+{t:"Level content pipeline",d:"How authored JSON becomes a playable, validated level.",steps:[
+ {k:"data",t:"Author level JSON",d:"Topology, devices, ports, objectives (requiredCommands / evidence) and walkthrough beats.",f:LEVEL_FILES.map(x=>"src/"+x.slice(1)).concat(["src/content/levels/coming-soon.json"]),a:"import"},
+ {k:"engine",t:"Validate at startup",d:"registry imports JSON (typed unknown via json.d.ts) and safeParses each with zod inside its own try/catch; invalid or duplicate files are skipped with a console warning while the rest still load.",f:[s("core/levels/registry.ts"),s("core/levels/schema.ts"),s("json.d.ts")],a:"LevelDefinition"},
+ {k:"engine",t:"Consume",d:"Used by the command context, Phaser scene, objectives engine, packet anatomy and progression.",f:[s("core/commands/types.ts"),s("game/scenes/NetworkScene.ts"),s("core/levels/objectives.ts"),s("core/network/packetAnatomy.ts"),s("core/state/progressStore.ts")],a:"localize"},
+ {k:"ui",t:"Localize",d:"Arabic overrides via localizeLevel / localizeObjective / localizeBeat; lessons per level.",f:[s("i18n/levels.ts"),s("i18n/lessons.ts")],a:"CI"},
+ {k:"test",t:"Guard",d:"registry, objectives and content tests ensure schema validity, skip-on-error loading, provable objectives and EN/AR parity.",f:[s("core/levels/registry.test.ts"),s("core/levels/objectives.test.ts"),s("i18n/content.test.ts")]},
+]},
+{t:"Language switch (EN ⇄ AR)",d:"Full UI localization with RTL layout; terminal stays English by design.",steps:[
+ {k:"user",t:"Toggle language",d:"LanguageToggle in the top bar, landing header or settings.",f:[s("components/ui/LanguageToggle.tsx")],a:"setLanguage()"},
+ {k:"state",t:"Persist choice",d:"languageStore saves cyberlaps:language.",f:[s("i18n/languageStore.ts"),s("core/persistence/storage.ts")],a:"re-render"},
+ {k:"ui",t:"Re-translate React",d:"useT() re-memoizes; useDocumentLanguage flips <html dir='rtl'>.",f:[s("i18n/index.ts"),s("i18n/translate.ts"),s("i18n/messages/en.ts"),s("i18n/messages/ar.ts")],a:"subscription"},
+ {k:"render",t:"Relabel stage",d:"NetworkScene subscribes and relabels device nodes via translate().",f:[s("game/scenes/NetworkScene.ts")]},
+]},
+{t:"Tool introduction (Lab Agent)",d:"New tools explain themselves before first use.",steps:[
+ {k:"state",t:"New tool detected",d:"Current level introduces a tool not yet introduced.",f:[s("core/state/progressStore.ts"),s("core/levels/registry.ts")],a:"openModal(toolIntro)"},
+ {k:"ui",t:"Open Lab Agent",d:"LabAgentModal auto-opens, or the learner clicks a tool card in VisualStageViewport.",f:[s("components/agent/LabAgentModal.tsx"),s("components/stage/VisualStageViewport.tsx"),s("core/state/uiStore.ts")],a:"getToolInfo()"},
+ {k:"data",t:"Load tool info",d:"Zod-validated catalog.json; localizeTool() for Arabic.",f:[s("core/tools/catalog.ts"),s("content/tools/catalog.json"),s("i18n/tools.ts")],a:"pause"},
+ {k:"render",t:"Pause & resume",d:"Simulation pauses while the modal is open; closing resumes.",f:[s("core/state/uiStore.ts"),s("game/scenes/NetworkScene.ts")]},
+]},
+{t:"Restart level / reset progress",d:"Cross-store reset coordinated by levelSession.",steps:[
+ {k:"user",t:"Request reset",d:"TopBar 'Restart level' or SettingsPanel 'Reset all', confirmed in ConfirmDialog.",f:[s("components/layout/TopBar.tsx"),s("components/landing/SettingsPanel.tsx"),s("components/ui/ConfirmDialog.tsx")],a:"levelSession"},
+ {k:"state",t:"Reset stores",d:"restartLevel(id): ledger.removeAssetsFoundIn(id) + progress.restartLevel(id). resetAllProgress(): clearLedger + resetProgress.",f:[s("core/state/levelSession.ts"),s("core/state/ledgerStore.ts"),s("core/state/progressStore.ts")],a:"persist"},
+ {k:"state",t:"Write through",d:"Persist middleware saves via the storage adapter.",f:[s("core/persistence/storage.ts")],a:"subscriptions"},
+ {k:"render",t:"Rebuild",d:"Scene rebuilds the map (fog-of-war restored); terminal cancels in-flight runs.",f:[s("game/scenes/NetworkScene.ts"),s("terminal/TerminalSession.ts")]},
+]},
+{t:"Audio pipeline",d:"SFX and ambient sound driven by UI, terminal and stage events.",steps:[
+ {k:"user",t:"Trigger",d:"Button / IconButton / LanguageToggle click → playUiSound(); terminal reject or level complete, packet outcome on stage → playSfx().",f:[s("components/ui/Button.tsx"),s("components/ui/IconButton.tsx"),s("components/ui/LanguageToggle.tsx"),s("components/ui/uiSound.ts"),s("terminal/TerminalSession.ts"),s("game/systems/PacketFlowSystem.ts")],a:"playUiSound / playSfx"},
+ {k:"engine",t:"Dispatch",d:"AudioProvider registers playSfx as the UI sound handler; playSfx forwards to the audioManager singleton inside try/catch, so failures stay silent.",f:[s("app/providers/AudioProvider.tsx"),s("core/audio/index.ts"),s("core/audio/AudioManager.ts")],a:"recipe + gain"},
+ {k:"engine",t:"Synthesize & mix",d:"SFX recipes, ambient pad, master × channel × mute gains.",f:[s("core/audio/sfxRecipes.ts"),s("core/audio/ambientPad.ts"),s("core/audio/mix.ts")],a:"settings"},
+ {k:"state",t:"Settings sync",d:"AudioToolbar / SettingsPanel update audioStore → AudioProvider pushes to audioManager.",f:[s("components/audio/AudioToolbar.tsx"),s("components/landing/SettingsPanel.tsx"),s("core/state/audioStore.ts"),s("app/providers/AudioProvider.tsx")]},
+]},
+];
+
+const LAYERS=[
+ {t:"Entry & App Shell",d:"Bootstraps React, providers and routing",ta:"المدخل وهيكل التطبيق",da:"يُقلِع React والموفّرات والتوجيه",f:["index.html",s("main.tsx"),s("app/App.tsx"),s("app/router/index.tsx"),s("app/router/LabRoute.tsx"),s("app/providers/AudioProvider.tsx"),s("pages/LandingPage.tsx")]},
+ {t:"Presentation — React components",d:"Lab workspace, landing sections, modals, primitives",ta:"العرض — مكوّنات React",da:"مساحة عمل المختبر، وأقسام الصفحة الرئيسية، والنوافذ المنبثقة، والعناصر الأساسية",f:[s("components/layout/AppLayout.tsx"),s("components/layout/TopBar.tsx"),s("components/stage/VisualStageViewport.tsx"),s("components/stage/ApplyStep.tsx"),s("components/stage/WalkthroughBar.tsx"),s("components/terminal/TerminalPanel.tsx"),s("components/ledger/ReconLedgerSidebar.tsx"),s("components/inspector/PacketInspectorModal.tsx"),s("components/agent/LabAgentModal.tsx"),s("components/hub/LevelMapMenu.tsx"),s("components/ui/Button.tsx"),s("components/ui/Dialog.tsx")]},
+ {split:[
+   {t:"Terminal engine (xterm.js)",d:"Input, history, command execution",ta:"محرك الطرفية (xterm.js)",da:"الإدخال، وسجل الأوامر، وتنفيذ الأوامر",f:[s("components/terminal/XtermTerminal.tsx"),s("terminal/TerminalSession.ts"),s("terminal/ansi.ts")]},
+   {t:"Visual Stage (Phaser 3 · lazy chunk)",d:"Isometric network diorama",ta:"المسرح المرئي (Phaser 3 · جزء كسول)",da:"مجسّم شبكة متساوي القياس",f:[s("components/stage/PhaserStage.tsx"),s("game/scenes/NetworkScene.ts"),s("game/systems/PacketFlowSystem.ts"),s("game/objects/TopologyView.ts"),s("game/walkthrough/WalkthroughDirector.ts")]},
+ ]},
+ {t:"State bus — Zustand",d:"stageStore is the only link between terminal and stage",ta:"ناقل الحالة — Zustand",da:"stageStore هو الرابط الوحيد بين الطرفية والمسرح",f:[s("core/state/progressStore.ts"),s("core/state/stageStore.ts"),s("core/state/uiStore.ts"),s("core/state/ledgerStore.ts"),s("core/state/profileStore.ts"),s("core/state/audioStore.ts"),s("i18n/languageStore.ts"),s("core/state/levelSession.ts"),s("core/persistence/storage.ts")]},
+ {split:[
+   {t:"Simulation engine (pure TS)",d:"Parser, commands, network model, objectives",ta:"محرك المحاكاة (TypeScript بحت)",da:"المحلّل، والأوامر، ونموذج الشبكة، والأهداف",f:[s("core/parser/parse.ts"),s("core/commands/index.ts"),s("core/commands/nmap.ts"),s("core/network/routing.ts"),s("core/network/packetAnatomy.ts"),s("core/levels/registry.ts"),s("core/levels/objectives.ts"),s("core/tools/catalog.ts")]},
+   {t:"Audio & i18n services",d:"Howler / Web Audio · EN/AR dictionaries",ta:"خدمات الصوت والتوطين",da:"Howler / Web Audio · قواميس EN/AR",f:[s("core/audio/AudioManager.ts"),s("core/audio/index.ts"),s("core/audio/defaults.ts"),s("i18n/index.ts"),s("i18n/translate.ts"),s("i18n/messages/en.ts")]},
+ ]},
+ {t:"Content & foundation",d:"Authored JSON, shared types, pure utilities",ta:"المحتوى والأساس",da:"ملفات JSON مؤلَّفة، وأنواع مشتركة، وأدوات مساعدة بحتة",f:[s("content/levels/level-01.json"),s("content/tools/catalog.json"),s("types/topology.ts"),s("types/ledger.ts"),s("types/packet.ts"),s("lib/ip.ts"),s("lib/text.ts"),s("lib/cn.ts")]},
+];
+
+/* ───────────────────────────── ARABIC CONTENT ───────────────────────────── */
+/* In Arabic strings, wrap code that starts or ends with punctuation in `backticks`: it is rendered bidi-isolated so it keeps LTR order inside RTL text. */
+const LEVEL_TITLES_AR=["تعرّف على شبكتك","اعثر على جار","ارسم خريطة الشبكة كاملة","اطرق الأبواب","سمِّ الخدمات","شبكة فرعية ثانية","الجدار الناري الصامت","صامت لكنه حي","طابق الوظائف","استطلاع شامل"];
+const AR_FILES={
+"index.html":"مدخل HTML لـ Vite: هيكل داكن، ونقطة التركيب `#root`، ويحمّل `src/main.tsx`.",
+"package.json":"الاعتماديات (react 18، phaser 3، zustand 5، zod، xterm 5، howler) والسكربتات: dev / build / typecheck / test.",
+"package-lock.json":"شجرة اعتماديات مقفلة لعمليات تثبيت قابلة للتكرار.",
+"vite.config.ts":"خادم التطوير (`:5173`)، والاسم المستعار `'@' → src`، وتقسيم يدوي للأجزاء (phaser / xterm / audio / react)، وبيئة Vitest على node.",
+"tsconfig.json":"خيارات مترجم TypeScript؛ ونجاح `npm run build` مشروط بـ `tsc -b`.",
+"tailwind.config.ts":"رموز سمة Tailwind (الألوان، الخطوط، الظلال) وأنماط مسارات المحتوى.",
+"postcss.config.js":"خط معالجة PostCSS: tailwindcss + autoprefixer.",
+".oxlintrc.json":"قواعد Oxlint. أداة تطوير فقط، بلا أثر وقت التشغيل.",
+".gitignore":"قواعد التجاهل في Git (مخرجات البناء، والسجلات، وبيانات النظام مثل desktop.ini).",
+"README.md":"نظرة عامة على المنتج، وقائمة الميزات، وتعليمات التشغيل.",
+"~main.tsx":"جذر React: يعرض `<App/>` داخل StrictMode ويستورد CSS العام.",
+"~index.css":"طبقات Tailwind، وتعريفات الخطوط، والأنماط العامة وأنماط xterm.",
+"~app/App.tsx":"المكوّن الجذري: AudioProvider + RouterProvider؛ ويُبقي `<html lang/dir>` متزامنًا مع اللغة.",
+"~app/router/index.tsx":"المسارات: `/` يعرض LandingPage، و`/lab` و`/lab/:levelId` يعرضان LabRoute، وأي مسار آخر `*` يُعاد توجيهه إلى الرئيسية.",
+"~app/router/LabRoute.tsx":"يتحقق من معامل المستوى (isLevelPlayable)، ويضبط المستوى الحالي، ويعرض AppLayout.",
+"~app/providers/AudioProvider.tsx":"يدفع إعدادات الصوت المحفوظة إلى الكائن الوحيد audioManager، ويوصل `playSfx` معالجًا لأصوات الواجهة.",
+"~pages/LandingPage.tsx":"الصفحة الرئيسية: القسم الافتتاحي، ومركز مجالات التدريب، ولوحة المشغّل، والإعدادات، ونافذة تسجيل الدخول.",
+"~components/agent/LabAgentModal.tsx":"نافذة وكيل المختبر لتقديم الأدوات؛ تُفتح تلقائيًا عندما يقدّم المستوى أداة جديدة.",
+"~components/audio/AudioToolbar.tsx":"مفاتيح الصوت في الشريط العلوي (الرئيسي / الموسيقى / الخلفية) + منزلقات مستوى الصوت.",
+"~components/audio/VolumeSlider.tsx":"منزلق مستوى صوت يدعم إمكانية الوصول.",
+"~components/hub/LevelMapMenu.tsx":"قائمة خريطة المستويات المنسدلة: المستويات المكتملة والمفتوحة والمقفلة والقادمة قريبًا.",
+"~components/inspector/PacketInspectorModal.tsx":"يوقف المحاكاة مؤقتًا ويعرض ترويسات الحزمة المنقور عليها طبقةً طبقة.",
+"~components/landing/DomainHub.tsx":"شريط دوّار لوحدات التدريب (الاستطلاع متاح، والباقي مقفل) + SectionHeading.",
+"~components/landing/HeroSection.tsx":"القسم الافتتاحي مع زر الدعوة: ابدأ / تابع.",
+"~components/landing/LoginDialog.tsx":"نموذج تسجيل دخول / إنشاء حساب تجريبي محلي مع تحقق (لا تُخزَّن كلمات المرور أبدًا).",
+"~components/landing/OperatorAvatar.tsx":"الصورة الرمزية للمشغّل (الأحرف الأولى / أيقونة).",
+"~components/landing/OperatorPanel.tsx":"بطاقة المشغّل: الملف الشخصي، والمستوى الحالي، وإحصاءات الاستطلاع.",
+"~components/landing/SettingsPanel.tsx":"إعدادات الصوت واللغة وموضع الطرفية وإعادة ضبط كل التقدّم.",
+"~components/landing/useReconSummary.ts":"خطّاف (Hook) يستخلص إحصاءات التقدّم وسجل الاستطلاع لعناصر الصفحة الرئيسية.",
+"~components/layout/AppLayout.tsx":"هيكل مساحة عمل المختبر: الشريط العلوي، والمسرح، وطرفية مثبّتة قابلة لتغيير الحجم، وسجل الاستطلاع، والنوافذ المنبثقة.",
+"~components/layout/BrandMark.tsx":"الشعار + اسم العلامة.",
+"~components/layout/ModuleTabs.tsx":"شريط تبويبات وحدات التدريب.",
+"~components/layout/PanelResizeHandle.tsx":"مقبض سحب بالمؤشر لتغيير حجم لوحة الطرفية.",
+"~components/layout/PhaseStepper.tsx":"مؤشر المراحل: شاهد ← تعلّم ← طبّق.",
+"~components/layout/TopBar.tsx":"ترويسة المختبر: التنقّل، وخريطة المستويات، ومؤشر المراحل، والصوت، واللغة، وإعادة تشغيل المستوى.",
+"~components/ledger/LedgerAssetCard.tsx":"بطاقة لأصل مكتشَف واحد (IP، MAC، المنافذ، الحالات).",
+"~components/ledger/ReconLedgerSidebar.tsx":"سجل استطلاع قابل للطي: الأصول المكتشفة مرتّبة حسب IP؛ ومسح السجل.",
+"~components/stage/ApplyStep.tsx":"مرحلة التطبيق: قائمة أهداف حيّة، والإكمال، وزر الانتقال إلى المستوى التالي.",
+"~components/stage/PhaserStage.tsx":"مضيف لوحة الرسم (canvas)؛ يحمّل لعبة Phaser كسولًا عبر الاستيراد الديناميكي `import('@/game')`.",
+"~components/stage/StageLegend.tsx":"مفتاح ألوان نتائج الحزم.",
+"~components/stage/VisualStageViewport.tsx":"لوحة المسرح: محتوى المراحل (شاهد / تعلّم / طبّق)، والدروس، وبطاقات الأدوات، ولوحة Phaser.",
+"~components/stage/WalkthroughBar.tsx":"أدوات التحكم في مرحلة المشاهدة (تشغيل / إيقاف مؤقت / التالي / تخطٍّ) + تعليق المقطع المترجَم.",
+"~components/terminal/TerminalPanel.tsx":"إطار لوحة الطرفية: مفتاح التثبيت، وشارات الحالة؛ ويستضيف XtermTerminal.",
+"~components/terminal/XtermTerminal.tsx":"غلاف React ينشئ TerminalSession على عنصر div ويتخلّص منه.",
+"~components/ui/Badge.tsx":"عنصر شارة أساسي ملوّن حسب النبرة.",
+"~components/ui/Button.tsx":"أنماط الأزرار؛ ومؤثر النقر عبر خطّاف uiSound الاختياري (دون استيراد محرك الصوت).",
+"~components/ui/ConfirmDialog.tsx":"نافذة تأكيد / إلغاء للإجراءات الهدّامة.",
+"~components/ui/Dialog.tsx":"عنصر نافذة منبثقة أساسي يدعم إمكانية الوصول.",
+"~components/ui/IconButton.tsx":"زر بأيقونة فقط؛ ومؤثر النقر عبر خطّاف uiSound الاختياري.",
+"~components/ui/LanguageToggle.tsx":"مبدّل اللغة EN ⇄ AR؛ ومؤثر النقر عبر خطّاف uiSound.",
+"~components/ui/Panel.tsx":"عناصر سطح أساسية: Panel + PanelHeader.",
+"~components/ui/uiSound.ts":"خطّاف صوت اختياري لعناصر الواجهة الأساسية: `setUiSoundHandler()` / `playUiSound()`. لا يعرف شيئًا عن محرك الصوت.",
+"~core/audio/AudioManager.ts":"كائن وحيد مبني على Howler (الصنف مُصدَّر للاختبارات): تشغيل المؤثرات، وطبقة الخلفية، والموسيقى، ومزج مستويات الصوت. يأخذ إعداداته الابتدائية من `core/audio/defaults` لا من طبقة الحالة.",
+"~core/audio/ambientPad.ts":"طبقة صوت خلفية توليدية عبر Web Audio.",
+"~core/audio/defaults.ts":"`DEFAULT_AUDIO_SETTINGS`: وحدة طرفية محايدة يتشاركها AudioManager وaudioStore (فيبقى تدفق البيانات باتجاه واحد).",
+"~core/audio/index.ts":"واجهة الصوت العامة: audioManager + `playSfx()` (لا ترمي استثناءً أبدًا).",
+"~core/audio/mix.ts":"حسابات كسب الصوت البحتة (الرئيسي × القناة × الكتم).",
+"~core/audio/sfxRecipes.ts":"وصفات توليف الصوت لكل SfxName.",
+"~core/commands/arpScan.ts":"محاكاة arp-scan: يمسح نطاق CIDR للشبكة المحلية للاعب، وينتج مجسّات IP/MAC.",
+"~core/commands/help.ts":"الأمر help، وطريقة استخدام كل أمر، واقتراحات لتصحيح الأخطاء الإملائية.",
+"~core/commands/index.ts":"`runCommandLine()`: تحليل ← توزيع ← `CommandRun {steps, rejected, clearScreen}`.",
+"~core/commands/network.ts":"أدوات محاكاة مشتركة: العنونة، وعضوية الشبكة المحلية، وRTT/TTL، ونقاط الإسقاط، وتلميحات عناوين IP الخاطئة.",
+"~core/commands/nmap.ts":"محاكاة nmap: فحص المضيفين والمنافذ (`-F`، `-p`)، وحالات المنافذ والخدمات.",
+"~core/commands/ping.ts":"محاكاة ping: صدى ICMP عبر المسار — ردّ أو إسقاط أو انتهاء مهلة.",
+"~core/commands/types.ts":"عقود الأوامر: CommandContext، CommandRun، Probe، OutputLine + دوال مساعدة للطباعة.",
+"~core/levels/index.ts":"ملف تجميعي (barrel): السجل + الأهداف.",
+"~core/levels/objectives.ts":"نموذج الأدلة: verifiedFinds، evidenceOfProbe، mergeEvidence، evaluateObjectives، deviceIntel (ضباب الحرب).",
+"~core/levels/registry.ts":"يحمّل كل ملفات JSON للمستويات ويتحقق منها عبر zod عند بدء التشغيل (buildLevelRegistry / buildComingSoonList)؛ getLevelDefinition، getPlayerDevice، والقوائم.",
+"~core/levels/schema.ts":"مخططات Zod لملفات المستويات وقائمة المستويات القادمة.",
+"~core/network/packetAnatomy.ts":"`describePacket()`: تفصيل الترويسات لكل طبقة من أجل فاحص الحزم.",
+"~core/network/routing.ts":"findDeviceByIp، وrouteHops عبر الشبكات الفرعية والموجّهات.",
+"~core/network/services.ts":"جدول ربط المنفذ ↔ الخدمة؛ ومجموعات منافذ الفحص الافتراضي والسريع.",
+"~core/parser/ast.ts":"أنواع Token / AST / Diagnostic + دوال مساعدة للخيارات.",
+"~core/parser/grammar.ts":"مواصفات الأوامر (ping، arp-scan، nmap، help، clear…) وقواعد الخيارات.",
+"~core/parser/index.ts":"ملف تجميعي: ast، grammar، parseCommand، tokenize.",
+"~core/parser/parse.ts":"`parseCommand()`: يحوّل الرموز إلى AST متحقَّق منه مع تشخيصات واقتراحات «هل تقصد».",
+"~core/parser/tokenize.ts":"محلّل معجمي مع نطاقات المصدر والتشخيصات.",
+"~core/tools/catalog.ts":"كتالوج الأدوات (ping، arp-scan، nmap) من JSON بعد التحقق منه عبر Zod.",
+"~core/persistence/storage.ts":"محوّل localStorage: بادئة المفاتيح `cyberlaps:`، وترحيل المفاتيح القديمة `cyber-lab:`، وبديل في الذاكرة.",
+"~core/state/audioStore.ts":"إعدادات صوت محفوظة (مستويات الصوت، الكتم)، قيمها الابتدائية من `core/audio/defaults` (ويعيد تصديرها).",
+"~core/state/ledgerStore.ts":"سجل استطلاع محفوظ: إدراج / دمج لكل IP، وحذف حسب المستوى، ومسح.",
+"~core/state/levelSession.ts":"إجراءات عابرة للمخازن: `restartLevel(id)`، `resetAllProgress()`.",
+"~core/state/profileStore.ts":"ملف المشغّل المحلي المحفوظ؛ والتحقق من التسجيل / الدخول.",
+"~core/state/progressStore.ts":"مركز التقدّم المحفوظ: المستوى الحالي، والمرحلة، والأدلة، والإكمال، وفتح المستويات.",
+"~core/state/stageStore.ts":"ناقل مسرح مؤقت: صندوق صادر الحزم، وأوقات الاستقرار، وآخر الحزم (50)، وحالة الجولة التوضيحية.",
+"~core/state/uiStore.ts":"تخطيط واجهة محفوظ (سجل الاستطلاع، موضع / حجم الطرفية) + النافذة النشطة وإيقاف المحاكاة مؤقتًا.",
+"~game/createStageGame.ts":"يبني Phaser.Game مع NetworkScene؛ ويعيد مقبضًا (تغيير الحجم / الإتلاف).",
+"~game/index.ts":"مدخل اللعبة العام، يُحمَّل كسولًا كجزء (chunk) مستقل.",
+"~game/theme.ts":"لوحة الألوان، وطبقات العمق، وألوان النتائج، والخطوط، وحسابات الألوان.",
+"~game/objects/DeviceNode.ts":"جهاز واحد: نموذج صلصالي أو صندوق غامض، وتسميات، وإبراز، وكشف.",
+"~game/objects/TopologyView.ts":"يرسم لوحة المجسّم والشبكات الفرعية؛ ويرتّب عُقد DeviceNode.",
+"~game/objects/clayPainter.ts":"أساسيات التظليل الصلصالي على Canvas 2D.",
+"~game/objects/clayTextures.ts":"يولّد خامات النماذج والصناديق والقواعد ويخزّنها مؤقتًا.",
+"~game/objects/deviceModels.ts":"رسّامات نماذج متساوية القياس لكل DeviceKind.",
+"~game/objects/iso.ts":"رياضيات الإسقاط متساوي القياس + رسم البلاطات / الشبكة / الظلال.",
+"~game/scenes/NetworkScene.ts":"المشهد الرئيسي: يربط المخازن ↔ Phaser (الحزم، والجولة التوضيحية، وكشف ضباب الحرب، واللغة).",
+"~game/systems/PacketFlowSystem.ts":"يحرّك تدفقات الحزم قفزةً قفزة بألوان النتائج والمؤثرات الصوتية والنقر للفحص.",
+"~game/walkthrough/WalkthroughDirector.ts":"يجدول مقاطع الجولة التوضيحية (تشغيل / إيقاف / خطوة / تخطٍّ) عبر Scheduler قابل للحقن.",
+"~terminal/TerminalSession.ts":"جلسة xterm.js: تحرير الأسطر، وسجل الأوامر، والإكمال التلقائي؛ تشغّل الأوامر وتزامن الحزم والأدلة وسجل الاستطلاع.",
+"~terminal/ansi.ts":"سمة xterm، والمحثّ (prompt)، وتحويل OutputLine إلى ANSI.",
+"~i18n/index.ts":"`useT()`، `useLanguage()`، `useDocumentLanguage()`؛ ويعيد تصدير دوال التوطين.",
+"~i18n/languageStore.ts":"اختيار اللغة المحفوظ.",
+"~i18n/lessons.ts":"محتوى الدروس لكل مستوى (EN / AR).",
+"~i18n/levels.ts":"تجاوزات عربية لعناوين المستويات وأهدافها ومقاطع الجولة التوضيحية.",
+"~i18n/tools.ts":"نصوص كتالوج الأدوات بالعربية؛ `localizeTool()`.",
+"~i18n/translate.ts":"`translate()`، وصيغ الجمع، وتنسيق الأرقام، واتجاه النص.",
+"~i18n/messages/en.ts":"القاموس الإنجليزي — مصدر النوع MessageKey.",
+"~i18n/messages/ar.ts":"القاموس العربي، مُنمَّط وفق MessageKey.",
+"~modules/catalog.ts":"قائمة وحدات التدريب (الاستطلاع متاح، والبقية قريبًا).",
+"~modules/icons.ts":"ربط معرّف الوحدة ← أيقونة lucide.",
+"~lib/cn.ts":"دالة مساعدة لأسماء الأصناف: clsx + tailwind-merge.",
+"~lib/ip.ts":"حسابات IPv4 / CIDR (التحليل، الاحتواء، عدد المضيفين، المقارنة).",
+"~lib/text.ts":"editDistance / closestMatch للاقتراحات.",
+"~types/audio.ts":"SfxName، SfxOptions، AudioSettings.",
+"~types/ledger.ts":"LedgerAsset، LedgerPort؛ ويعيد تصدير PortState من topology (استيراد باتجاه واحد).",
+"~types/level.ts":"LevelId، LevelPhase.",
+"~types/packet.ts":"PacketRequest، PacketFlow.",
+"~types/topology.ts":"LevelDefinition، NetworkDevice، Topology، DeviceKind، PortState، والأهداف، ومقاطع الجولة التوضيحية، وPacketOutcome.",
+"~json.d.ts":"تنميط محيطي لاستيرادات ملفات JSON (تُعامَل كـ unknown ثم يُتحقق منها عبر zod).",
+"~content/levels/coming-soon.json":"المستويات المُعلنة من 11 فصاعدًا (العنوان، الملخص).",
+"~content/tools/catalog.json":"تعريفات الأدوات: ping، arp-scan، nmap.",
+"~components/ui/uiSound.test.ts":"خطّاف أصوات الواجهة: صامت دون معالج، ويبتلع أخطاء المعالج، وتنظيف محصور بالمعالج المسجَّل.",
+"~core/audio/AudioManager.test.ts":"AudioManager مع AudioContext وهمي: الفتح، وتقييد التكرار، والكتم، والموسيقى، والعمل في الخلفية، والسياق غير المدعوم / الفاشل؛ و`playSfx` لا ترمي استثناءً.",
+"~core/audio/mix.test.ts":"حسابات مزج كسب الصوت.",
+"~core/commands/commands.test.ts":"تشغيل الأوامر على مستويات حقيقية (المخرجات، المجسّات، الرفض).",
+"~core/levels/objectives.test.ts":"أهداف كل مستوى قابلة للإثبات عبر الأوامر.",
+"~core/levels/registry.test.ts":"ملفات JSON للمستويات صالحة؛ وعدد المستويات القابلة للعب مطابق؛ وتُتخطّى الملفات المعطوبة أو المكرّرة، ويعود ملف المستويات القادمة غير الصالح بقائمة فارغة.",
+"~core/network/packetAnatomy.test.ts":"طبقات الترويسات لحزم نموذجية.",
+"~core/network/routing.test.ts":"البحث عن الأجهزة والمسارات متعددة القفزات.",
+"~core/parser/parse.test.ts":"تشخيصات المحلّل المعجمي / المحلّل / القواعد.",
+"~core/state/ledgerStore.test.ts":"إدراج / دمج الأصول، ودمج المنافذ وترتيبها، والحذف حسب المستوى، والمسح.",
+"~core/state/levelSession.test.ts":"إعادة تشغيل مستوى واحد مقابل إعادة ضبط كل التقدّم عبر مخزني السجل والتقدّم.",
+"~core/state/progressStore.test.ts":"دمج الأدلة، والإكمال، وترحيل الحفظ.",
+"~core/state/profileStore.test.ts":"التحقق من التسجيل وتسجيل الدخول.",
+"~core/state/stageStore.test.ts":"معرّفات الحزم، وتفريغ صندوق الصادر، وسجل آخر 50 حزمة، وأوقات الاستقرار، وكل انتقالات الجولة التوضيحية.",
+"~core/state/uiStore.test.ts":"مفاتيح سجل الاستطلاع / موضع الطرفية، وتقييد حجم الطرفية، وإيقاف المحاكاة مع النوافذ، والحقول المحفوظة.",
+"~core/tools/catalog.test.ts":"تطابق الكتالوج ↔ الأوامر عبر المستويات.",
+"~game/walkthrough/WalkthroughDirector.test.ts":"جدولة المقاطع باستخدام مُجدوِل وهمي.",
+"~i18n/content.test.ts":"تطابق EN / AR للرسائل والمستويات والأدوات والدروس.",
+};
+LEVEL_FILES.forEach((p,i)=>{AR_FILES[p]=`المستوى ${i+1} — «${LEVEL_TITLES_AR[i]}»: الطوبولوجيا، والأجهزة، والمنافذ، والأهداف، ومقاطع الجولة التوضيحية.`;});
+const AR_BY_EN={
+"UI reference screenshot (not used by the build).":"لقطة شاشة مرجعية للواجهة (لا تُستخدم في البناء).",
+};
+const AR_GLOBAL={
+"index.html":"مستند الدخول — لا شيء يُحمَّل بدونه.",
+"package.json":"التثبيت، وخادم التطوير، والبناء، وكل تشغيل للاختبارات.",
+"package-lock.json":"حلّ الاعتماديات لكل وحدة.",
+"vite.config.ts":"كل استيراد بصيغة `'@/…'`، والتجميع، ومشغّل الاختبارات.",
+"tsconfig.json":"فحص الأنواع وبناء جميع ملفات TypeScript (ts/tsx).",
+"tailwind.config.ts":"تنسيق كل مكوّن (مرئي فقط — المنطق غير متأثر).",
+"postcss.config.js":"توليد CSS (مرئي فقط).",
+};
+const AR_RT={
+"~components/stage/PhaserStage.tsx":"الاستيراد الديناميكي يعزل Phaser في جزء (chunk) مستقل: انهيار وقت التشغيل داخل اللعبة يترك واجهة React والطرفية صالحتين للاستخدام (لكن البناء وفحص الأنواع يظلان معطّلين).",
+"~app/providers/AudioProvider.tsx":"المكان الوحيد الذي تُوصَل فيه عناصر الواجهة الأساسية بمحرك الصوت: إن لم يُركَّب تبقى الأزرار صامتة فحسب.",
+"~core/levels/registry.ts":"يُبنى مرة واحدة عند تحميل الوحدة؛ ويستورده progressStore، لذا يبقى على مسار بدء تشغيل التطبيق بأكمله.",
+"~core/persistence/storage.ts":"إذا كان localStorage محظورًا يتحوّل بصمت إلى الذاكرة: يستمر التطبيق في العمل، لكن التقدّم وسجل الاستطلاع والملف الشخصي والإعدادات تضيع عند إعادة التحميل.",
+"~core/state/progressStore.ts":"يشترك فيه NetworkScene وTerminalSession مباشرةً: تغيّر المستوى / المرحلة يعيد بناء المسرح ويعيد ضبط تدفق الطرفية.",
+"~core/state/stageStore.ts":"العقد الوحيد بين الطرفية وPhaser هو: `TerminalSession.emitPackets() → outbox → NetworkScene.drainOutbox() → PacketFlowSystem → packetSettled() → settledAt`؛ ثم تطبع الطرفية النتيجة وتسجّل الدليل.",
+"~core/state/uiStore.ts":"تضبط activeModal قيمة simulationPaused؛ ويشترك NetworkScene فيها ليجمّد حركة الحزم.",
+"~game/scenes/NetworkScene.ts":"إذا لم يستدعِ المشهد `stageLoaded()` أبدًا تبقى `stage.ready` بقيمة false، وتطبع TerminalSession النتائج فورًا (تدهور سلس). وتتوقف الجولة التوضيحية والنقر على الحزم وكشف الأجهزة.",
+"~game/systems/PacketFlowSystem.ts":"تنتظر الطرفية `packetSettled()` لكل مجسّ؛ والحركة المتعثّرة تحجز مخرجات ذلك الأمر حتى يُلغى التشغيل أو يتغيّر المستوى.",
+"~i18n/languageStore.ts":"يشترك NetworkScene فيه ويعيد تسمية عُقد الأجهزة عند التغيير.",
+};
+const AR_GUARD={
+"~components/ui/uiSound.ts":"`playUiSound()` لا تفعل شيئًا حتى يُوصَل معالج، وتبتلع أخطاءه (مع تسجيلها مرة واحدة)، فلا يمكن لعطل صوتي أن يمنع النقرة التي أطلقته.",
+"~core/audio/AudioManager.ts":"إذا رفض المتصفح إنشاء AudioContext يسجّل تحذيرًا مرة واحدة ويبقى صامتًا ولا يعيد المحاولة مع الإيماءات اللاحقة (فلا تتسرّب سياقات). ولا يستورد شيئًا من `core/state`، فلا يمكن لعطل في مخزن أو في التخزين أن يمنع تحميل المحرك.",
+"~core/audio/index.ts":"تغلّف `playSfx()` التشغيل في `try/catch` وتبلّغ عن كل مؤثر فاشل مرة واحدة: أخطاء الصوت وقت التشغيل لا تقاطع الطرفية ولا تحريك الحزم ولا النقرات.",
+"~core/levels/registry.ts":"يُتحقق من كل ملف مستوى داخل `try/catch` خاص به: يُتخطّى المستوى غير الصالح أو المكرّر مع تحذير في وحدة التحكم، ويعود ملف المستويات القادمة غير الصالح بقائمة فارغة، فيُقلع التطبيق والصفحة الرئيسية رغم ذلك.",
+};
+const AR_DIRS={
+  "src":"مصدر التطبيق","src/app":"المكوّن الجذري، والموفّرات، والموجّه","src/app/router":"جدول المسارات + حارس المستوى","src/app/providers":"موفّرو السياق / الآثار الجانبية",
+  "src/pages":"صفحات على مستوى المسار","src/components":"واجهة React","src/components/ui":"عناصر نظام التصميم الأساسية","src/components/layout":"هيكل المختبر وإطاره",
+  "src/components/landing":"أقسام الصفحة الرئيسية","src/components/stage":"لوحة المسرح المرئي","src/components/terminal":"لوحة الطرفية","src/components/ledger":"سجل الاستطلاع",
+  "src/components/agent":"نافذة وكيل المختبر","src/components/inspector":"فاحص الحزم","src/components/hub":"خريطة المستويات","src/components/audio":"أدوات التحكم بالصوت",
+  "src/core":"المحرك والحالة بلا أُطر","src/core/commands":"أدوات سطر أوامر محاكاة","src/core/parser":"لغة الأوامر","src/core/levels":"سجل المستويات والأهداف",
+  "src/core/network":"التوجيه، والخدمات، وتشريح الحزم","src/core/state":"مخازن Zustand","src/core/audio":"محرك الصوت","src/core/tools":"كتالوج الأدوات","src/core/persistence":"محوّل التخزين",
+  "src/game":"مسرح Phaser 3 (جزء كسول)","src/game/objects":"عرض صلصالي متساوي القياس","src/game/scenes":"مشاهد Phaser","src/game/systems":"تحريك الحزم","src/game/walkthrough":"مُخرج مرحلة المشاهدة",
+  "src/terminal":"جلسة xterm.js","src/i18n":"توطين EN/AR","src/i18n/messages":"القواميس","src/content":"بيانات JSON مؤلَّفة","src/content/levels":"تعريفات المستويات","src/content/tools":"بيانات كتالوج الأدوات",
+  "src/types":"أنواع النطاق المشتركة","src/lib":"أدوات مساعدة بحتة","src/modules":"كتالوج مجالات التدريب","ex photo":"لقطات شاشة مرجعية",
+};
+const AR_ARROW={"store subscription":"اشتراك في المخزن","re-render":"إعادة العرض","module init":"تهيئة الوحدات","render":"العرض","subscription":"اشتراك","caption":"تعليق","import":"استيراد","localize":"توطين","pause":"إيقاف مؤقت","persist":"حفظ","subscriptions":"اشتراكات","recipe + gain":"وصفة + كسب","settings":"الإعدادات"};
+const AR_WF=[
+{t:"أمر الطرفية ← المحاكاة ← الأدلة",d:"حلقة التعلّم الأساسية: يتحوّل الأمر المكتوب إلى حزم متحركة وإدخالات في سجل الاستطلاع وتقدّم في الأهداف.",s:[
+ ["اكتب أمرًا","مثلًا `nmap -F 10.0.0.0/24` في الطرفية المثبّتة ثم اضغط Enter."],
+ ["تحديد سياق المستوى","يُستخدم `currentLevelId` مع `getLevelDefinition()` و`getPlayerDevice()` لبناء `CommandContext`."],
+ ["التحليل","يمرّ السطر عبر `tokenize` ثم `parseCommand` ثم التحقق من القواعد؛ مع تشخيصات واقتراحات «هل تقصد» عند الأخطاء."],
+ ["المحاكاة","يُوزَّع الأمر إلى `runPing` / `runArpScan` / `runNmap` / `runHelp`. وينتج التوجيه والخدمات وحسابات CIDR مجسّاتٍ (Probes): حزمة + مخرجات."],
+ ["تسجيل الأمر والطباعة","يُستدعى `recordEvidence({commands})`؛ وتُطبع الخطوات فورًا بصيغة ANSI؛ والأوامر المرفوضة تشغّل مؤثر الرفض."],
+ ["وضع الحزم في الطابور","تُعيد `stageStore.emitPackets()` كائنات `PacketFlow` وتضعها في صندوق الصادر (outbox)."],
+ ["التحريك على المسرح","يفرّغ `NetworkScene` صندوق الصادر؛ ويحرّك `PacketFlowSystem` كل قفزة بألوان النتائج والمؤثرات الصوتية، ثم يستدعي `packetSettled(id)`."],
+ ["وصول المجسّات","تراقب الطرفية `settledAt` وتطبع مخرجات كل مجسّ بترتيب استقراره (فورًا إن لم يكن المسرح جاهزًا)."],
+ ["اعتماد النتائج","يُستدعى `ledgerStore.upsertAsset()` للمضيفين المتحقَّق منهم؛ ثم `progressStore.recordEvidence()` ثم `objectivesMet()` الذي يعلّم المستوى مكتملًا."],
+ ["تفاعل الواجهة","يؤشّر `ApplyStep` على الأهداف، ويعرض سجل الاستطلاع الأصول، وتكشف `DeviceNode` هوية الأجهزة (`deviceIntel`)، ويفتح `LevelMapMenu` المستوى التالي، وتعلن الطرفية الإكمال."],
+]},
+{t:"إقلاع التطبيق والتوجيه",d:"من `index.html` إلى مساحة عمل المختبر.",s:[
+ ["فتح التطبيق","يحمّل المتصفح `index.html`؛ ويخدّم Vite رسم الوحدات البياني (مع تأجيل Phaser)."],
+ ["تركيب React","يعرض `main.tsx` المكوّن `<App/>` داخل StrictMode ويحمّل CSS العام والخطوط."],
+ ["استعادة حالة المخازن","تقرأ وسيطة `persist` في Zustand مفاتيح `cyberlaps:*` عبر `getBrowserStorage()`؛ وتُرحَّل مفاتيح `cyber-lab:*` القديمة مرة واحدة؛ مع بديل في الذاكرة إن كان التخزين محظورًا."],
+ ["هيكل التطبيق","يزامن `AudioProvider` الإعدادات مع `audioManager` ويوصل معالج أصوات الواجهة؛ ويضبط `useDocumentLanguage` السمتين `lang` و`dir` على `<html>`."],
+ ["التوجيه","المسار `/` يعرض `LandingPage` · والمسار `/lab/:levelId` يعرض `LabRoute` (مع إعادة التوجيه إن لم يكن المستوى قابلًا للعب) · وأي مسار آخر `*` يعود إلى `/`."],
+ ["مساحة عمل المختبر","`TopBar`، و`VisualStageViewport`، و`TerminalPanel` القابلة لتغيير الحجم، و`ReconLedgerSidebar`، ونافذتا LabAgent وInspector."],
+]},
+{t:"جولة مرحلة المشاهدة",d:"عرض حزم مُبرمَج يفتتح كل مستوى.",s:[
+ ["دخول المستوى","يضبط `LabRoute` المستوى؛ وتصبح `progressStore.phase = 'watch'`."],
+ ["تحميل المسرح كسولًا","ينتظر `PhaserStage` تحميل الخطوط، ثم يستورد جزء اللعبة ديناميكيًا: `createStageGame` ثم `NetworkScene`."],
+ ["بناء الخريطة","يرسم `TopologyView` الشبكات الفرعية وعُقد `DeviceNode`؛ وتظهر الأجهزة غير المكتشفة كصناديق «?»."],
+ ["بدء العرض","يُستدعى `stageLoaded(levelId, beatCount)`؛ وإذا كانت المرحلة `'watch'` يُستدعى `playWalkthrough()`."],
+ ["تشغيل المقاطع","يجدول `WalkthroughDirector` المقاطع من ملف JSON للمستوى؛ وكل مقطع يُطلق حزمًا وتعليقًا (`setWalkthroughBeat`)."],
+ ["التحكم بالتشغيل","أزرار `WalkthroughBar` (التالي / إيقاف مؤقت / تخطٍّ / إعادة) تستدعي إجراءات `stageStore` التي يلتقطها اشتراك المشهد."],
+ ["الانتقال بين المراحل","تُترجَم التعليقات عبر `localizeBeat`؛ وينتقل المتعلّم: شاهد ← تعلّم ← طبّق باستخدام `PhaseStepper`."],
+]},
+{t:"فحص الحزم",d:"انقر حزمة متحركة لتجميد الوقت وقراءة ترويساتها.",s:[
+ ["النقر على حزمة","إصابة المؤشر لرسم حزمة أثناء انتقالها."],
+ ["فتح النافذة","يستدعي `uiStore.openModal({kind:'packetInspector'})` فتصبح `simulationPaused = true`."],
+ ["تجميد المسرح","يوقف المشهد جميع حركات الحزم مؤقتًا طالما النافذة مفتوحة."],
+ ["وصف الحزمة","يجد الفاحص التدفق في `stageStore.recentPackets` (آخر 50)؛ ويبني `describePacket()` طبقات L2–L7 عبر التوجيه والخدمات."],
+ ["الاستئناف","الإغلاق يمسح `activeModal`؛ فتُستأنف المحاكاة."],
+]},
+{t:"خط إنتاج محتوى المستويات",d:"كيف يصبح ملف JSON المؤلَّف مستوى قابلًا للعب ومتحقَّقًا منه.",s:[
+ ["تأليف JSON للمستوى","الطوبولوجيا، والأجهزة، والمنافذ، والأهداف (`requiredCommands` / `evidence`)، ومقاطع الجولة التوضيحية."],
+ ["التحقق عند بدء التشغيل","يستورد السجل ملفات JSON (بنوع `unknown` عبر `json.d.ts`) ويمرّر كلًّا منها إلى `safeParse` في zod داخل `try/catch` خاص به؛ ويُتخطّى الملف غير الصالح أو المكرّر مع تحذير في وحدة التحكم بينما تُحمَّل بقية المستويات."],
+ ["الاستهلاك","يستخدمه سياق الأوامر، ومشهد Phaser، ومحرك الأهداف، وتشريح الحزم، والتقدّم."],
+ ["التوطين","تجاوزات عربية عبر `localizeLevel` / `localizeObjective` / `localizeBeat`؛ ودروس لكل مستوى."],
+ ["الحماية","تضمن اختبارات السجل والأهداف والمحتوى صلاحية المخطط، وتخطّي الملفات المعطوبة عند التحميل، وقابلية إثبات الأهداف، وتطابق EN/AR."],
+]},
+{t:"تبديل اللغة (EN ⇄ AR)",d:"توطين كامل للواجهة مع تخطيط RTL؛ وتبقى الطرفية بالإنجليزية عن قصد.",s:[
+ ["تبديل اللغة","`LanguageToggle` في الشريط العلوي، أو ترويسة الصفحة الرئيسية، أو الإعدادات."],
+ ["حفظ الاختيار","يحفظ `languageStore` المفتاح `cyberlaps:language`."],
+ ["إعادة ترجمة React","يعيد `useT()` الحساب؛ ويقلب `useDocumentLanguage` السمة `<html dir='rtl'>`."],
+ ["إعادة تسمية المسرح","يشترك `NetworkScene` ويعيد تسمية عُقد الأجهزة عبر `translate()`."],
+]},
+{t:"تعريف الأدوات (وكيل المختبر)",d:"الأدوات الجديدة تشرح نفسها قبل أول استخدام.",s:[
+ ["اكتشاف أداة جديدة","يقدّم المستوى الحالي أداة لم يُعرَّف بها بعد."],
+ ["فتح وكيل المختبر","تُفتح `LabAgentModal` تلقائيًا، أو ينقر المتعلّم بطاقة أداة في `VisualStageViewport`."],
+ ["تحميل معلومات الأداة","ملف `catalog.json` متحقَّق منه عبر Zod؛ و`localizeTool()` للعربية."],
+ ["الإيقاف والاستئناف","تتوقف المحاكاة مؤقتًا أثناء فتح النافذة؛ والإغلاق يستأنفها."],
+]},
+{t:"إعادة تشغيل المستوى / إعادة ضبط التقدّم",d:"إعادة ضبط عابرة للمخازن ينسّقها `levelSession`.",s:[
+ ["طلب إعادة الضبط","زر «إعادة تشغيل المستوى» في `TopBar` أو «إعادة ضبط الكل» في `SettingsPanel`، مع التأكيد عبر `ConfirmDialog`."],
+ ["إعادة ضبط المخازن","`restartLevel(id)`: `ledger.removeAssetsFoundIn(id)` + `progress.restartLevel(id)`. و`resetAllProgress()`: `clearLedger` + `resetProgress`."],
+ ["الكتابة المباشرة","تحفظ وسيطة `persist` البيانات عبر محوّل التخزين."],
+ ["إعادة البناء","يعيد المشهد بناء الخريطة (مع استعادة ضباب الحرب)؛ وتلغي الطرفية الأوامر الجارية."],
+]},
+{t:"خط معالجة الصوت",d:"مؤثرات وأصوات خلفية تقودها أحداث الواجهة والطرفية والمسرح.",s:[
+ ["المُحفِّز","نقرة على `Button` / `IconButton` / `LanguageToggle` تستدعي `playUiSound()`؛ ورفض في الطرفية أو إكمال مستوى أو نتيجة حزمة على المسرح تستدعي `playSfx()`."],
+ ["التوزيع","يسجّل `AudioProvider` الدالة `playSfx` معالجًا لأصوات الواجهة؛ وتمرّر `playSfx` الطلب إلى الكائن الوحيد `audioManager` داخل `try/catch`، فتبقى الأعطال صامتة."],
+ ["التوليف والمزج","وصفات المؤثرات، وطبقة الخلفية، وكسب الصوت: الرئيسي × القناة × الكتم."],
+ ["مزامنة الإعدادات","يحدّث `AudioToolbar` / `SettingsPanel` المخزن `audioStore`، ثم يدفع `AudioProvider` القيم إلى `audioManager`."],
+]},
+];
+const NOTES={
+en:[
+ `<b>progressStore is the critical hub.</b> It imports the level registry, so every level JSON is still loaded on the startup path of the entire lab. The registry now validates each file in its own try/catch: a broken or duplicate level is skipped with a console warning instead of taking the app down.`,
+ `<b>Engines are decoupled by design.</b> TerminalSession and NetworkScene never import each other; stageStore (outbox → settledAt) is the single contract. If the stage isn't ready, the terminal prints results instantly.`,
+ `<b>Phaser is isolated.</b> PhaserStage loads <span class="mono">@/game</span> via dynamic import into its own chunk (see vite manualChunks).`,
+ `<b>Audio is decoupled from UI primitives.</b> Button, IconButton and LanguageToggle call the optional <span class="mono">components/ui/uiSound</span> hook; only AudioProvider wires it to <span class="mono">playSfx</span>. The static blast radius of <span class="mono">core/audio</span> dropped from 35 to 23 modules (12 → 7 features), and at runtime <span class="mono">playSfx</span> and AudioManager swallow failures, so broken audio only means silence.`,
+ `<b>Layer leaks resolved — the import graph has no cycles.</b> DEFAULT_AUDIO_SETTINGS now lives in the neutral leaf <span class="mono">core/audio/defaults</span>: AudioManager no longer reaches up into <span class="mono">core/state</span>, and audioStore imports (and re-exports) the defaults downward. <span class="mono">PortState</span> moved next to <span class="mono">DeviceKind</span> in <span class="mono">types/topology</span>, so <span class="mono">types/ledger → types/topology</span> is one-way and the old type-only cycle is gone.`,
+ `<b>Shared types carry the widest blast radius.</b> <span class="mono">types/level</span>, <span class="mono">types/topology</span> and <span class="mono">types/ledger</span> together reach ~70 modules (71 of 121) — a breaking type change fails typecheck almost everywhere, though it has no runtime effect.`,
+ `<b>Fault isolation is complete across subsystems.</b> Level files load in per-file try/catch; Phaser is a lazy chunk; the terminal and stage talk only through stageStore and the terminal prints instantly if the stage never loads; <span class="mono">playUiSound</span>, <span class="mono">playSfx</span> and AudioManager swallow audio failures; storage falls back to memory. The audio engine now depends only on <span class="mono">types/audio</span> and its own leaves, so it boots independently of the stores.`,
+],
+ar:[
+ `<b>progressStore هو المحور الحرج.</b> فهو يستورد سجل المستويات، لذا يبقى كل ملف JSON للمستويات على مسار بدء تشغيل المختبر بأكمله. لكن السجل يتحقق الآن من كل ملف داخل <span class="mono">try/catch</span> خاص به: يُتخطّى المستوى المعطوب أو المكرّر مع تحذير في وحدة التحكم بدل أن يُسقط التطبيق.`,
+ `<b>المحرّكات منفصلة تصميميًا.</b> لا يستورد TerminalSession ولا NetworkScene أحدهما الآخر؛ ويبقى stageStore (<span class="mono">outbox → settledAt</span>) العقد الوحيد بينهما. وإذا لم يكن المسرح جاهزًا تطبع الطرفية النتائج فورًا.`,
+ `<b>Phaser معزول.</b> يحمّل PhaserStage الوحدة <span class="mono">@/game</span> عبر استيراد ديناميكي في جزء (chunk) مستقل (انظر manualChunks في إعدادات Vite).`,
+ `<b>الصوت منفصل عن عناصر الواجهة الأساسية.</b> تستدعي Button وIconButton وLanguageToggle الخطّاف الاختياري <span class="mono">components/ui/uiSound</span>؛ ولا يوصله بالدالة <span class="mono">playSfx</span> إلا AudioProvider. انخفض نطاق التأثير الثابت لـ <span class="mono">core/audio</span> من 35 إلى 23 وحدة (من 12 إلى 7 ميزات)، ووقت التشغيل تبتلع <span class="mono">playSfx</span> وAudioManager الأعطال، فأقصى أثر لتعطّل الصوت هو الصمت.`,
+ `<b>عولجت التسرّبات بين الطبقات — ورسم الاستيراد خالٍ من الدورات.</b> أصبحت القيمة DEFAULT_AUDIO_SETTINGS في الوحدة الطرفية المحايدة <span class="mono">core/audio/defaults</span>: فلم يعد AudioManager يصعد إلى <span class="mono">core/state</span>، ويستورد audioStore القيم الافتراضية نزولًا (ويعيد تصديرها). ونُقل <span class="mono">PortState</span> إلى جوار <span class="mono">DeviceKind</span> في <span class="mono">types/topology</span>، فصار <span class="mono">types/ledger → types/topology</span> باتجاه واحد وزالت الدورة القديمة على مستوى الأنواع.`,
+ `<b>الأنواع المشتركة تملك أوسع نطاق تأثير.</b> تصل <span class="mono">types/level</span> و<span class="mono">types/topology</span> و<span class="mono">types/ledger</span> مجتمعةً إلى نحو 70 وحدة (71 من 121) — فأي تغيير كاسر في الأنواع يُفشل فحص الأنواع في كل مكان تقريبًا، رغم أنه بلا أثر وقت التشغيل.`,
+ `<b>عزل الأعطال مكتمل عبر الأنظمة الفرعية.</b> تُحمَّل ملفات المستويات داخل <span class="mono">try/catch</span> لكل ملف؛ وPhaser جزء كسول مستقل؛ ولا تتواصل الطرفية والمسرح إلا عبر stageStore، وتطبع الطرفية النتائج فورًا إن لم يُحمَّل المسرح؛ وتبتلع <span class="mono">playUiSound</span> و<span class="mono">playSfx</span> وAudioManager أعطال الصوت؛ ويتحوّل التخزين إلى الذاكرة عند حظره. ولم يعد محرك الصوت يعتمد إلا على <span class="mono">types/audio</span> ووحداته الطرفية، فيُقلع مستقلًا عن المخازن.`,
+],
+};
+
+/* ───────────────────────────── UI STRINGS ───────────────────────────── */
+const UI={
+en:{
+ "doc.title":"CyberLaps — Architecture Map","logo":"CyberLaps · Architecture Map",
+ "search.ph":"Search files, roles, workflows…","search.aria":"Search files, roles and workflows (press /)","lang.aria":"Interface language",
+ "tab.overview":"Overview","tab.explorer":"File Explorer","tab.graph":"Dependency Graph","tab.cascade":"Cascade Failure Map","tab.workflows":"Workflows",
+ "hint.uses":"uses (direct)","hint.breaks":"breaks if selected fails",
+ "g.tests":"Tests","g.content":"Content JSON",
+ "g.hint":'Leaves (left) → entry points (right). Click a node: <b style="color:#38bdf8">blue</b> = what it relies on, <b style="color:#f87171">red</b> = what breaks.',
+ "casc.side":"Ranked by blast radius (transitive dependents, excluding tests).",
+ "stat.files":"<b>{n}</b> files","stat.modules":"<b>{n}</b> modules","stat.edges":"<b>{n}</b> edges","stat.cycles":"<b>{n}</b> cycles",
+ "ov.h":"CyberLaps — local cybersecurity simulation lab",
+ "ov.intro":"Watch → Learn → Apply. A React UI drives a pure-TypeScript network simulator; a docked xterm.js terminal and a lazy-loaded Phaser stage communicate only through Zustand stores. Click any file chip to inspect it.",
+ "kpi.files":"Files mapped","kpi.modules":"Source modules","kpi.edges":"Internal import edges","kpi.tests":"Vitest suites","kpi.levels":"Playable levels","kpi.wf":"Workflows",
+ "ov.layers":"Layered architecture","ov.insights":"Computed insights",
+ "ov.hubs":"Most-imported hubs","ov.hubsSub":"Direct dependents — change carefully",
+ "ov.blast":"Largest blast radius","ov.blastSub":"Transitive dependents (non-test)",
+ "ov.health":"Structural health","ov.cycles":"Import cycles:","ov.none":"none","ov.unused":"Never imported:",
+ "ov.untested":"Engine/state modules without test reach ({a}/{b}):","ov.notes":"Architecture notes",
+ "tree.rdeps":"Direct dependents","nomatch":"No files match.",
+ "d.test":'Test-only: a failure here breaks <span class="mono">npm test</span> / CI, not the running app. Covers {n} modules transitively.',
+ "d.contained":"No internal dependents — a failure is contained to this file{x}.","d.containedContent":" (if it is invalid, the registry skips just this level with a console warning)",
+ "d.count":"{n} source modules ({p}% of the codebase) break transitively.",
+ "d.feats":"Features affected:","d.featsNone":"none of the tracked features","d.covered":"test-covered",
+ "m.deps":"Direct dependencies","m.rdeps":"Direct dependents","m.impact":"Transitive impact","m.up":"Transitive upstream","all":"ALL",
+ "d.break":"⚠ If this file fails or breaks","d.rt":"Runtime coupling:","d.guard":"Fault isolation:",
+ "d.dependsOn":"Depends on ({n})","d.leaf":"Nothing internal — leaf module.","d.usedBy":"Used by ({n})","d.unused":"Not imported by any file.","d.ext":"External packages",
+ "d.toGraph":"Show in dependency graph","d.toCasc":"Open cascade map",
+ "w.title":"File Explorer",
+ "w.body":'Select a file to see its role, what it relies on, and exactly what breaks if it fails. Hover any file in the tree to preview its chain: <b style="color:#7dd3fc">blue</b> = direct dependencies, <b style="color:#fca5a5">red</b> = everything downstream that would break.',
+ "w.start":"Suggested starting points",
+ "gh.leaves":"Depth 0 · leaves","gh.entry":"Depth {n} · entry","gh.depth":"Depth {n}",
+ "gi.up":"{n} upstream","gi.imp":"{n} impacted","gi.feat":"{n} features","gi.open":"Open details","gi.casc":"Cascade","close":"Close",
+ "c.origin":"Failure origin","c.relies":"Relies on","c.direct":"Direct (L1)","c.level":"Level {k}",
+ "c.build":"Build-wide failure","c.feats":"Features affected ({a}/{b})","c.featsNone":"None — failure is contained.",
+ "c.chain":"Cascade chain — hover a card to trace its path back to the origin","c.layers":"Blast radius by layer",
+ "c.nothing":"Nothing imports this file.","c.ci":"Only CI is affected.","c.local":"A failure stays local.",
+ "wf.count":"{a} of {b} workflows","wf.meta":"{s} steps · {f} files","wf.risk":"Riskiest files in this workflow","wf.deps":"{n} dependents",
+},
+ar:{
+ "doc.title":"CyberLaps — خريطة البنية المعمارية","logo":"CyberLaps · خريطة البنية المعمارية",
+ "search.ph":"ابحث في الملفات والأدوار ومسارات العمل…","search.aria":"ابحث في الملفات والأدوار ومسارات العمل (اضغط /)","lang.aria":"لغة الواجهة",
+ "tab.overview":"نظرة عامة","tab.explorer":"مستكشف الملفات","tab.graph":"مخطط الاعتماديات","tab.cascade":"خريطة الفشل المتسلسل","tab.workflows":"مسارات العمل",
+ "hint.uses":"يستخدمه (مباشرةً)","hint.breaks":"يتعطّل إذا فشل المحدَّد",
+ "g.tests":"الاختبارات","g.content":"محتوى JSON",
+ "g.hint":'الأوراق (يمينًا) ← نقاط الدخول (يسارًا). انقر عقدة: <b style="color:#38bdf8">الأزرق</b> = ما تعتمد عليه، <b style="color:#f87171">الأحمر</b> = ما يتعطّل.',
+ "casc.side":"مرتّبة حسب نطاق التأثير (المعتمِدون غير المباشرين، باستثناء الاختبارات).",
+ "stat.files":"الملفات <b>{n}</b>","stat.modules":"الوحدات <b>{n}</b>","stat.edges":"الروابط <b>{n}</b>","stat.cycles":"الدورات <b>{n}</b>",
+ "ov.h":"CyberLaps — مختبر محلي لمحاكاة الأمن السيبراني",
+ "ov.intro":"شاهد ← تعلّم ← طبّق. واجهة React تقود محاكي شبكات مكتوبًا بلغة TypeScript البحتة؛ وتتواصل طرفية xterm.js المثبّتة ومسرح Phaser المحمَّل كسولًا عبر مخازن Zustand فقط. انقر أي شريحة ملف لفحصه.",
+ "kpi.files":"الملفات المرسومة","kpi.modules":"وحدات المصدر","kpi.edges":"روابط الاستيراد الداخلية","kpi.tests":"مجموعات اختبارات Vitest","kpi.levels":"المستويات القابلة للعب","kpi.wf":"مسارات العمل",
+ "ov.layers":"البنية الطبقية","ov.insights":"رؤى محسوبة",
+ "ov.hubs":"المحاور الأكثر استيرادًا","ov.hubsSub":"المعتمِدون المباشرون — عدّل بحذر",
+ "ov.blast":"أكبر نطاق تأثير","ov.blastSub":"المعتمِدون غير المباشرين (عدا الاختبارات)",
+ "ov.health":"الصحة الهيكلية","ov.cycles":"دورات الاستيراد:","ov.none":"لا يوجد","ov.unused":"لم يُستورد قط:",
+ "ov.untested":"وحدات المحرك/الحالة التي لا تصلها الاختبارات ({a}/{b}):","ov.notes":"ملاحظات معمارية",
+ "tree.rdeps":"المعتمِدون المباشرون","nomatch":"لا توجد ملفات مطابقة.",
+ "d.test":'خاص بالاختبارات: الفشل هنا يعطّل <span class="mono">npm test</span> و CI، لا التطبيق أثناء تشغيله. عدد الوحدات التي يغطيها بشكل غير مباشر: {n}.',
+ "d.contained":"لا معتمِدين داخليين — يبقى الفشل محصورًا في هذا الملف{x}.","d.containedContent":" (إن كان غير صالح يتخطّى السجل هذا المستوى وحده مع تحذير في وحدة التحكم)",
+ "d.count":"تتعطّل {n} من وحدات المصدر بشكل غير مباشر ({p}% من قاعدة الشيفرة).",
+ "d.feats":"الميزات المتأثرة:","d.featsNone":"لا شيء من الميزات المتتبَّعة","d.covered":"مغطّى بالاختبارات",
+ "m.deps":"الاعتماديات المباشرة","m.rdeps":"المعتمِدون المباشرون","m.impact":"التأثير غير المباشر","m.up":"الاعتماديات غير المباشرة","all":"الكل",
+ "d.break":"⚠ إذا فشل هذا الملف أو تعطّل","d.rt":"الاقتران وقت التشغيل:","d.guard":"عزل الأعطال:",
+ "d.dependsOn":"يعتمد على ({n})","d.leaf":"لا اعتماديات داخلية — وحدة طرفية (ورقة).","d.usedBy":"يستخدمه ({n})","d.unused":"لا يستورده أي ملف.","d.ext":"الحزم الخارجية",
+ "d.toGraph":"اعرضه في مخطط الاعتماديات","d.toCasc":"افتح خريطة الفشل المتسلسل",
+ "w.title":"مستكشف الملفات",
+ "w.body":'اختر ملفًا لترى دوره، وما يعتمد عليه، وما الذي يتعطّل بالضبط إذا فشل. مرّر المؤشر فوق أي ملف في الشجرة لمعاينة سلسلته: <b style="color:#7dd3fc">الأزرق</b> = الاعتماديات المباشرة، <b style="color:#fca5a5">الأحمر</b> = كل ما يتعطّل في المصبّ.',
+ "w.start":"نقاط بداية مقترحة",
+ "gh.leaves":"العمق 0 · الأوراق","gh.entry":"العمق {n} · نقاط الدخول","gh.depth":"العمق {n}",
+ "gi.up":"المنبع {n}","gi.imp":"المتأثر {n}","gi.feat":"الميزات {n}","gi.open":"افتح التفاصيل","gi.casc":"التسلسل","close":"إغلاق",
+ "c.origin":"مصدر الفشل","c.relies":"يعتمد على","c.direct":"مباشر (L1)","c.level":"المستوى {k}",
+ "c.build":"فشل على مستوى البناء","c.feats":"الميزات المتأثرة ({a}/{b})","c.featsNone":"لا شيء — الفشل محصور.",
+ "c.chain":"سلسلة الفشل — مرّر المؤشر فوق بطاقة لتتبّع مسارها حتى المصدر","c.layers":"نطاق التأثير حسب الطبقة",
+ "c.nothing":"لا يستورد أي ملف آخر هذا الملف.","c.ci":"يتأثر CI فقط.","c.local":"يبقى الفشل محليًا.",
+ "wf.count":"مسارات العمل: {a} من {b}","wf.meta":"الخطوات: {s} · الملفات: {f}","wf.risk":"أخطر الملفات في مسار العمل هذا","wf.deps":"المعتمِدون: {n}",
+},
+};
+
+/* ───────────────────────────── MODEL ───────────────────────────── */
+const $=q=>document.querySelector(q);
+const esc=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const BIDI=s=>s==null?s:String(s).replace(/`([^`]+)`/g,"\u2066$1\u2069");
+const X=p=>p.startsWith("~")?"src/"+p.slice(1):p;
+const fname=id=>id.split("/").pop();
+const NODES=new Map();
+for(const [p,g,d,deps=[],ext=[],extra={}] of F) NODES.set(X(p),{id:X(p),g,d,dAr:BIDI(AR_FILES[p]??AR_BY_EN[d]),deps:[...new Set(deps.map(X))],ext,...extra,rtAr:BIDI(AR_RT[p]),guardAr:BIDI(AR_GUARD[p]),globalAr:BIDI(AR_GLOBAL[p]),rdeps:[]});
+for(const n of NODES.values()) for(const d of n.deps){const t=NODES.get(d); if(!t){console.warn("Unknown dep",n.id,"→",d);continue;} t.rdeps.push(n.id);}
+for(const n of NODES.values()) if(!n.dAr||(n.rt&&!n.rtAr)||(n.guard&&!n.guardAr)||(n.global&&!n.globalAr)) console.warn("Missing Arabic translation",n.id);
+for(const k of Object.keys(DIRS)) if(!AR_DIRS[k]) console.warn("Missing Arabic folder description",k);
+WORKFLOWS.forEach((w,i)=>{const a=AR_WF[i];
+  if(!a||a.s.length!==w.steps.length){console.warn("Arabic workflow out of sync",w.t);return;}
+  w.ta=BIDI(a.t);w.da=BIDI(a.d);w.steps.forEach((st,j)=>{st.ta=BIDI(a.s[j][0]);st.da=a.s[j][1];});});
+const ALL=[...NODES.values()];
+const NAMECOUNT=ALL.reduce((m,n)=>m.set(fname(n.id),(m.get(fname(n.id))||0)+1),new Map());
+const base=id=>{const p=id.split("/"),f=p.pop();return (NAMECOUNT.get(f)>1||f.startsWith("index."))&&p.length?p.pop()+"/"+f:f;};
+const isSrc=n=>n.id.startsWith("src/");
+const SRC_CORE=ALL.filter(n=>isSrc(n)&&n.g!=="test"&&n.g!=="asset");
+const EDGES=ALL.reduce((a,n)=>a+n.deps.length,0);
+
+const IMPC=new Map(),UPC=new Map();
+function impactFull(id){
+  if(IMPC.has(id)) return IMPC.get(id);
+  const n=NODES.get(id),lv=new Map(),par=new Map();
+  if(n.global){for(const m of ALL) if(isSrc(m)&&m.g!=="asset"&&m.id!==id){lv.set(m.id,1);par.set(m.id,id);}}
+  else{let fr=[id],k=0;while(fr.length){k++;const nx=[];for(const f of fr) for(const r of NODES.get(f).rdeps) if(r!==id&&!lv.has(r)){lv.set(r,k);par.set(r,f);nx.push(r);}fr=nx;}}
+  const res={lv,par}; IMPC.set(id,res); return res;
+}
+const impactOf=id=>impactFull(id).lv;
+function upstreamOf(id){
+  if(UPC.has(id)) return UPC.get(id);
+  const out=new Set(),st=[...NODES.get(id).deps];
+  while(st.length){const x=st.pop(); if(x===id||out.has(x)||!NODES.has(x)) continue; out.add(x); st.push(...NODES.get(x).deps);}
+  UPC.set(id,out); return out;
+}
+const impactCount=id=>[...impactOf(id).keys()].filter(i=>NODES.get(i).g!=="test").length;
+const SEV={build:{l:"Build-wide",ar:"على مستوى البناء",c:"#c084fc"},crit:{l:"Critical",ar:"حرج",c:"#ef4444"},high:{l:"High",ar:"مرتفع",c:"#f97316"},med:{l:"Medium",ar:"متوسط",c:"#eab308"},low:{l:"Low",ar:"منخفض",c:"#22c55e"},none:{l:"Contained",ar:"محصور",c:"#64748b"}};
+function severity(id){
+  const n=NODES.get(id); if(n.global) return SEV.build;
+  if(n.g==="test") return SEV.none;
+  const r=impactCount(id)/SRC_CORE.length;
+  return r>=.35?SEV.crit:r>=.12?SEV.high:r>=.03?SEV.med:r>0?SEV.low:SEV.none;
+}
+function featuresHit(id){
+  const n=NODES.get(id); if(n.global) return FEATURES;
+  const imp=impactOf(id); return FEATURES.filter(f=>f.files.some(x=>x===id||imp.has(x)));
+}
+function tarjan(){
+  let i=0;const idx=new Map(),low=new Map(),on=new Set(),st=[],out=[];
+  const sc=v=>{idx.set(v,i);low.set(v,i);i++;st.push(v);on.add(v);
+    for(const w of NODES.get(v).deps){if(!idx.has(w)){sc(w);low.set(v,Math.min(low.get(v),low.get(w)));}else if(on.has(w)) low.set(v,Math.min(low.get(v),idx.get(w)));}
+    if(low.get(v)===idx.get(v)){const c=[];let w;do{w=st.pop();on.delete(w);c.push(w);}while(w!==v);if(c.length>1) out.push(c);}};
+  for(const n of ALL) if(!idx.has(n.id)) sc(n.id);
+  return out;
+}
+const CYCLES=tarjan();
+const TESTED=new Set(); for(const t of ALL.filter(n=>n.g==="test")) for(const u of upstreamOf(t.id)) TESTED.add(u);
+
+/* ───────────────────────────── HELPERS ───────────────────────────── */
+const LANG_KEY="cyberlaps-archmap:lang";
+function initialLang(){
+  const u=new URLSearchParams(location.search).get("lang");if(u==="en"||u==="ar") return u;
+  try{const v=localStorage.getItem(LANG_KEY);if(v==="en"||v==="ar") return v;}catch(e){}
+  return "en";
+}
+const S={view:"overview",sel:null,detail:null,q:"",off:new Set(),gTests:false,gContent:true,casc:null,wf:0,lang:initialLang(),gHome:true};
+const isAr=()=>S.lang==="ar";
+const loc=(en,ar)=>isAr()&&ar?ar:en;
+const t=(k,v={})=>String(UI[S.lang][k]??UI.en[k]??k).replace(/\{(\w+)\}/g,(m,x)=>x in v?v[x]:m);
+const gLabel=g=>loc(GROUPS[g].label,GROUPS[g].ar);
+const nDesc=n=>loc(n.d,n.dAr);
+const color=id=>GROUPS[NODES.get(id).g].color;
+const tip=id=>{const n=NODES.get(id);return esc(`${id}\n${nDesc(n)}`);};
+const chip=(id,cls="")=>NODES.has(id)?`<span class="chip ${cls}" data-go="${esc(id)}" title="${tip(id)}"><i class="dot" style="background:${color(id)}"></i><bdi>${esc(base(id))}</bdi></span>`:"";
+const featChip=f=>`<span class="chip red feat">${esc(loc(f.name,f.ar))}</span>`;
+const sevPill=sv=>`<span class="pill" style="color:${sv.c}">${esc(loc(sv.l,sv.ar))}</span>`;
+const BIDI_MARKS=/[\u200e\u200f\u2066-\u2069`]/g;
+const qmatch=(...txt)=>!S.q||txt.some(x=>x!=null&&String(x).replace(BIDI_MARKS,"").toLowerCase().includes(S.q));
+const matchNode=n=>qmatch(n.id,n.d,n.dAr,GROUPS[n.g].label,GROUPS[n.g].ar);
+
+function legend(el){
+  el.innerHTML=Object.entries(GROUPS).map(([k,g])=>`<span class="lg ${S.off.has(k)?"off":""}" data-g="${k}"><i class="dot" style="background:${g.color}"></i>${esc(gLabel(k))}</span>`).join("");
+}
+document.addEventListener("click",e=>{
+  const lg=e.target.closest(".lg[data-g]");
+  if(lg){const g=lg.dataset.g;S.off.has(g)?S.off.delete(g):S.off.add(g);legend($("#lg1"));legend($("#lg2"));renderTree();renderGraph();return;}
+  const go=e.target.closest("[data-go]");
+  if(go){e.stopPropagation();goTo(go.dataset.go);}
+});
+function goTo(id){
+  if(S.view==="graph"){S.sel=id;graphHL(id);showGInfo(id);scrollGraphTo(id);return;}
+  if(S.view==="cascade"){S.casc=id;renderRank();renderCascade();return;}
+  if(NODES.get(id)&&S.off.has(NODES.get(id).g)){S.off.delete(NODES.get(id).g);legend($("#lg1"));legend($("#lg2"));}
+  setView("explorer"); select(id);
+}
+function setView(v){
+  S.view=v;
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+  document.querySelectorAll(".view").forEach(s=>s.classList.toggle("on",s.id==="v-"+v));
+  if(v==="graph"){renderGraph(); if(S.sel){graphHL(S.sel);showGInfo(S.sel);}
+    if(S.gHome){S.gHome=false; S.sel&&GPOS.has(S.sel)?scrollGraphTo(S.sel):graphHome();}}
+  if(v==="cascade"){if(!S.casc) S.casc=S.sel||rankList()[0].id; renderRank(); renderCascade();}
+}
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b) setView(b.dataset.v);});
+
+/* ───────────────────────────── OVERVIEW ───────────────────────────── */
+function renderOverview(){
+  const levels=ALL.filter(n=>n.id.includes("content/levels/level-")).length;
+  const hubs=SRC_CORE.slice().sort((a,b)=>b.rdeps.length-a.rdeps.length).slice(0,8);
+  const blast=SRC_CORE.slice().sort((a,b)=>impactCount(b.id)-impactCount(a.id)).slice(0,8);
+  const unused=SRC_CORE.filter(n=>!n.rdeps.length&&!["src/main.tsx","src/json.d.ts"].includes(n.id));
+  const testable=SRC_CORE.filter(n=>["domain","state","audio","base"].includes(n.g)&&!n.id.endsWith("index.ts"));
+  const untested=testable.filter(n=>!TESTED.has(n.id));
+  const kpi=(v,l)=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`;
+  const band=L=>`<div class="layer"><div class="lt"><b>${esc(loc(L.t,L.ta))}</b><span>${esc(loc(L.d,L.da))}</span></div>${L.f.map(x=>chip(x)).join("")}</div>`;
+  $("#ov").innerHTML=`
+  <h2>${t("ov.h")}</h2>
+  <p class="muted">${t("ov.intro")}</p>
+  <div class="kpis">${kpi(ALL.length,t("kpi.files"))}${kpi(SRC_CORE.length,t("kpi.modules"))}${kpi(EDGES,t("kpi.edges"))}${kpi(ALL.filter(n=>n.g==="test").length,t("kpi.tests"))}${kpi(levels,t("kpi.levels"))}${kpi(WORKFLOWS.length,t("kpi.wf"))}</div>
+  <h3>${t("ov.layers")}</h3>
+  <div class="grid">${LAYERS.map((L,i)=>(i?'<div class="vdown">▼</div>':"")+(L.split?`<div class="split">${L.split.map(band).join("")}</div>`:band(L))).join("")}</div>
+  <h3>${t("ov.insights")}</h3>
+  <div class="ins">
+    <div class="card"><b>${t("ov.hubs")}</b><div class="dim" style="font-size:12px">${t("ov.hubsSub")}</div><ol>${hubs.map(n=>`<li>${chip(n.id)} <span class="dim">${n.rdeps.length}</span></li>`).join("")}</ol></div>
+    <div class="card"><b>${t("ov.blast")}</b><div class="dim" style="font-size:12px">${t("ov.blastSub")}</div><ol>${blast.map(n=>`<li>${chip(n.id)} <span class="dim">${impactCount(n.id)}</span> ${sevPill(severity(n.id))}</li>`).join("")}</ol></div>
+    <div class="card"><b>${t("ov.health")}</b>
+      <p style="font-size:12px" class="muted">${t("ov.cycles")} ${CYCLES.length?CYCLES.map(c=>c.map(x=>chip(x)).join(" ↔ ")).join("<br>"):t("ov.none")}</p>
+      <p style="font-size:12px" class="muted">${t("ov.unused")} ${unused.length?unused.map(n=>chip(n.id)).join(""):t("ov.none")}</p>
+      <p style="font-size:12px" class="muted">${t("ov.untested",{a:untested.length,b:testable.length})} ${untested.map(n=>chip(n.id)).join("")}</p>
+    </div>
+  </div>
+  <h3>${t("ov.notes")}</h3>
+  <ul class="notes card" style="padding-inline-start:30px">${NOTES[S.lang].map(x=>`<li>${x}</li>`).join("")}</ul>`;
+}
+
+/* ───────────────────────────── EXPLORER ───────────────────────────── */
+function buildTree(){
+  const root={name:"cyber-lab",path:"",children:new Map(),files:[]};
+  for(const id of NODES.keys()){const parts=id.split("/");let cur=root;
+    for(let i=0;i<parts.length-1;i++){const p=parts.slice(0,i+1).join("/");if(!cur.children.has(parts[i])) cur.children.set(parts[i],{name:parts[i],path:p,children:new Map(),files:[]});cur=cur.children.get(parts[i]);}
+    cur.files.push(id);}
+  return root;
+}
+const TREE=buildTree();
+function dirHtml(dir,depth){
+  const kids=[...dir.children.values()].sort((a,b)=>a.name.localeCompare(b.name)).map(c=>dirHtml(c,depth+1)).filter(Boolean);
+  const files=dir.files.filter(id=>{const n=NODES.get(id);return !S.off.has(n.g)&&matchNode(n);}).sort((a,b)=>fname(a).localeCompare(fname(b)));
+  if(!kids.length&&!files.length) return "";
+  const inner=kids.map(k=>k.html).join("")+files.map(id=>{const n=NODES.get(id);
+    return `<div class="f" data-id="${esc(id)}" title="${tip(id)}"><span class="dot" style="background:${GROUPS[n.g].color}"></span><span class="nm"><bdi>${esc(fname(id))}</bdi></span>${n.rdeps.length?`<span class="fi" title="${t("tree.rdeps")}">↑${n.rdeps.length}</span>`:""}</div>`;}).join("");
+  const count=files.length+kids.reduce((a,k)=>a+k.count,0);
+  if(depth===0) return {html:inner,count};
+  const closed=!S.q&&(dir.path==="ex photo"||dir.path==="src/content/levels");
+  const dd=esc(loc(DIRS[dir.path],AR_DIRS[dir.path])||"");
+  return {count,html:`<details class="dir"${closed?"":" open"}><summary title="${dd}"><bdi>${esc(dir.name)}</bdi><span class="dd">${dd}</span><span class="cnt">${count}</span></summary><div class="kids">${inner}</div></details>`};
+}
+function renderTree(){
+  const r=dirHtml(TREE,0);
+  $("#tree").innerHTML=r?r.html:`<div class="empty">${t("nomatch")}</div>`;
+  treeHL(S.sel);
+}
+function treeHL(id){
+  const deps=id?new Set(NODES.get(id).deps):new Set(), imp=id?impactOf(id):new Map();
+  document.querySelectorAll("#tree .f").forEach(el=>{const i=el.dataset.id;
+    el.classList.toggle("sel",i===S.sel);el.classList.toggle("hl-dep",deps.has(i));el.classList.toggle("hl-imp",imp.has(i));});
+}
+$("#tree").addEventListener("click",e=>{const f=e.target.closest(".f");if(f) select(f.dataset.id);});
+$("#tree").addEventListener("mouseover",e=>{const f=e.target.closest(".f");if(f) treeHL(f.dataset.id);});
+$("#tree").addEventListener("mouseleave",()=>treeHL(S.sel));
+function select(id){
+  S.sel=id; renderDetail(id); treeHL(id);
+  const el=document.querySelector(`#tree .f[data-id="${CSS.escape(id)}"]`);
+  if(el){let p=el.parentElement;while(p&&p.id!=="tree"){if(p.tagName==="DETAILS") p.open=true;p=p.parentElement;} el.scrollIntoView({block:"nearest"});}
+}
+function cascadeLevels(id,cls="red"){
+  const lv=impactOf(id),by=new Map();
+  for(const [k,v] of lv){if(!by.has(v)) by.set(v,[]);by.get(v).push(k);}
+  return [...by.keys()].sort((a,b)=>a-b).map(k=>`<div class="lvl"><span class="tag">L${k} · ${by.get(k).length}</span><div>${by.get(k).sort().map(x=>chip(x,cls)).join("")}</div></div>`).join("");
+}
+function renderDetail(id){
+  const n=NODES.get(id); if(!n){$("#detail").innerHTML="";return;}
+  S.detail=id;
+  const sv=severity(id),imp=impactOf(id),feats=featuresHit(id),up=upstreamOf(id);
+  let brk;
+  if(n.global) brk=`<p style="color:#fecaca">${esc(loc(n.global,n.globalAr))}</p><div>${feats.map(featChip).join("")}</div>`;
+  else if(n.g==="test") brk=`<p class="muted">${t("d.test",{n:up.size})}</p>`;
+  else if(!imp.size) brk=`<p class="muted">${t("d.contained",{x:n.g==="content"?t("d.containedContent"):""})}</p>`;
+  else brk=`<p class="muted" style="margin-top:0">${t("d.count",{n:impactCount(id),p:Math.round(impactCount(id)/SRC_CORE.length*100)})}</p>
+    <div style="margin:8px 0 10px"><span class="dim" style="font-size:12px">${t("d.feats")}</span><br>${feats.length?feats.map(featChip).join(""):`<span class="dim">${t("d.featsNone")}</span>`}</div>${cascadeLevels(id)}`;
+  $("#detail").innerHTML=`
+   <div class="dhead"><span class="dot" style="width:12px;height:12px;background:${GROUPS[n.g].color}"></span><h2><bdi>${esc(base(id))}</bdi></h2>${sevPill(sv)}<span class="pill" style="color:${GROUPS[n.g].color}">${esc(gLabel(n.g))}</span>${TESTED.has(id)?`<span class="pill" style="color:#34d399">${t("d.covered")}</span>`:""}</div>
+   <div class="mono dim" style="margin-top:4px">${esc(id)}</div>
+   <p style="font-size:14px;margin-top:10px">${esc(nDesc(n))}</p>
+   <div class="metrics">
+     <div class="metric"><b>${n.deps.length}</b><span>${t("m.deps")}</span></div>
+     <div class="metric"><b>${n.rdeps.length}</b><span>${t("m.rdeps")}</span></div>
+     <div class="metric"><b style="color:${sv.c}">${n.global?t("all"):imp.size}</b><span>${t("m.impact")}</span></div>
+     <div class="metric"><b>${up.size}</b><span>${t("m.up")}</span></div>
+   </div>
+   <div class="break"><h4>${t("d.break")}</h4>${brk}</div>
+   ${n.rt?`<div class="rt"><b>${t("d.rt")}</b> ${esc(loc(n.rt,n.rtAr))}</div>`:""}
+   ${n.guard?`<div class="guard"><b>${t("d.guard")}</b> ${esc(loc(n.guard,n.guardAr))}</div>`:""}
+   <h3>${t("d.dependsOn",{n:n.deps.length})}</h3><div>${n.deps.map(x=>chip(x)).join("")||`<span class="dim">${t("d.leaf")}</span>`}</div>
+   <h3>${t("d.usedBy",{n:n.rdeps.length})}</h3><div>${n.rdeps.sort().map(x=>chip(x)).join("")||`<span class="dim">${t("d.unused")}</span>`}</div>
+   ${n.ext.length?`<h3>${t("d.ext")}</h3><div>${n.ext.map(x=>`<span class="chip feat mono">${esc(x)}</span>`).join("")}</div>`:""}
+   <div style="margin-top:20px;display:flex;flex-wrap:wrap;gap:8px">
+     <button class="btn" id="toGraph">${t("d.toGraph")}</button><button class="btn" id="toCasc">${t("d.toCasc")}</button></div>`;
+  $("#toGraph").onclick=()=>{setView("graph");graphHL(id);showGInfo(id);scrollGraphTo(id);};
+  $("#toCasc").onclick=()=>{S.casc=id;setView("cascade");};
+}
+function renderWelcome(){
+  S.detail=null;
+  $("#detail").innerHTML=`<div class="welcome"><h2>${t("w.title")}</h2><p class="muted">${t("w.body")}</p>
+  <h3>${t("w.start")}</h3><div>${["src/core/state/progressStore.ts","src/core/state/stageStore.ts","src/terminal/TerminalSession.ts","src/game/scenes/NetworkScene.ts","src/core/commands/index.ts","src/core/levels/registry.ts","src/i18n/translate.ts","src/core/persistence/storage.ts"].map(x=>chip(x)).join("")}</div></div>`;
+}
+
+/* ───────────────────────────── GRAPH ───────────────────────────── */
+let GPOS=new Map(),GW=0;
+const GNW=180;
+function renderGraph(){
+  const ns=ALL.filter(n=>!S.off.has(n.g)&&n.g!=="config"&&n.g!=="asset"&&(S.gTests||n.g!=="test")&&(S.gContent||n.g!=="content"));
+  const set=new Set(ns.map(n=>n.id)),depth=new Map(),stk=new Set();
+  const dfs=id=>{if(depth.has(id)) return depth.get(id);if(stk.has(id)) return 0;stk.add(id);let d=0;
+    for(const x of NODES.get(id).deps) if(set.has(x)) d=Math.max(d,dfs(x)+1);stk.delete(id);depth.set(id,d);return d;};
+  ns.forEach(n=>dfs(n.id));
+  const cols=[];for(const n of ns){const d=depth.get(n.id);(cols[d]||(cols[d]=[])).push(n.id);}
+  for(let i=0;i<cols.length;i++) cols[i]=cols[i]||[];
+  const gi=Object.keys(GROUPS);
+  cols.forEach(c=>c.sort((a,b)=>gi.indexOf(NODES.get(a).g)-gi.indexOf(NODES.get(b).g)||base(a).localeCompare(base(b))));
+  const yOf=new Map(),setY=()=>cols.forEach(c=>c.forEach((id,r)=>yOf.set(id,r-(c.length-1)/2)));setY();
+  const bary=(c,nb)=>{const k=new Map(c.map(id=>{const ys=nb(id).filter(x=>set.has(x)).map(x=>yOf.get(x));return [id,ys.length?ys.reduce((a,b)=>a+b,0)/ys.length:yOf.get(id)];}));c.sort((a,b)=>k.get(a)-k.get(b));};
+  for(let it=0;it<4;it++){
+    for(let i=1;i<cols.length;i++){bary(cols[i],id=>NODES.get(id).deps);setY();}
+    for(let i=cols.length-2;i>=0;i--){bary(cols[i],id=>NODES.get(id).rdeps);setY();}
+  }
+  const COLW=225,NW=GNW,NH=22,ROW=28,PX=24,PY=46,maxLen=Math.max(1,...cols.map(c=>c.length));
+  const W=PX*2+cols.length*COLW,H=PY+24+maxLen*ROW;
+  GW=W;
+  const rtl=isAr(),fx=x=>rtl?W-x:x;
+  GPOS=new Map();
+  cols.forEach((c,ci)=>c.forEach((id,ri)=>GPOS.set(id,{x:PX+ci*COLW,y:PY+(maxLen-c.length)*ROW/2+ri*ROW})));
+  let edges="",nodes="",heads="";
+  cols.forEach((c,ci)=>{const hx=PX+ci*COLW,lab=`${ci===0?t("gh.leaves"):ci===cols.length-1?t("gh.entry",{n:ci}):t("gh.depth",{n:ci})} (${c.length})`;
+    heads+=rtl?`<text class="colh" x="${W-hx}" y="22" text-anchor="end">\u2067${esc(lab)}\u2069</text>`:`<text class="colh" x="${hx}" y="22">${esc(lab)}</text>`;});
+  for(const n of ns) for(const d of n.deps){if(!set.has(d)) continue;const a=GPOS.get(d),b=GPOS.get(n.id);
+    const x1=a.x+NW,y1=a.y+NH/2,x2=b.x,y2=b.y+NH/2;let p;
+    if(x2>x1){const dx=Math.max(30,(x2-x1)/2);p=`M${fx(x1)},${y1} C${fx(x1+dx)},${y1} ${fx(x2-dx)},${y2} ${fx(x2)},${y2}`;}
+    else p=`M${fx(a.x)},${y1} C${fx(a.x-60)},${y1} ${fx(b.x+NW+60)},${y2} ${fx(b.x+NW)},${y2}`;
+    edges+=`<path class="ge" data-s="${esc(d)}" data-t="${esc(n.id)}" d="${p}"/>`;}
+  for(const n of ns){const {x,y}=GPOS.get(n.id),c=GROUPS[n.g].color;let lab=base(n.id);if(lab.length>28) lab=lab.slice(0,27)+"…";
+    nodes+=`<g class="gn" data-id="${esc(n.id)}" transform="translate(${rtl?W-x-NW:x},${y})"><title>${tip(n.id)}</title><rect width="${NW}" height="${NH}" rx="5" style="stroke:${c}"/><circle cx="${rtl?NW-10:10}" cy="${NH/2}" r="3.5" fill="${c}"/><text x="${rtl?NW-19:19}" y="15"${rtl?' text-anchor="end"':""}>${esc(lab)}</text></g>`;}
+  $("#gwrap").innerHTML=`<svg id="gsvg" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${heads}<g>${edges}</g><g>${nodes}</g></svg>`;
+  const svg=$("#gsvg");
+  svg.addEventListener("click",e=>{const g=e.target.closest(".gn");if(g){S.sel=g.dataset.id;graphHL(S.sel);showGInfo(S.sel);}else{S.sel=null;graphHL(null);$("#ginfo").style.display="none";}});
+  svg.addEventListener("mouseover",e=>{const g=e.target.closest(".gn");if(g) graphHL(g.dataset.id);});
+  svg.addEventListener("mouseout",e=>{if(e.target.closest(".gn")&&!(e.relatedTarget&&e.relatedTarget.closest&&e.relatedTarget.closest(".gn"))) graphHL(S.sel);});
+  graphSearch(); if(S.sel&&set.has(S.sel)) graphHL(S.sel);
+}
+function graphHL(id){
+  const svg=$("#gsvg");if(!svg) return;
+  const on=id&&GPOS.has(id);svg.classList.toggle("focus",!!on);
+  const up=on?upstreamOf(id):new Set(),dn=on?impactOf(id):new Map();
+  svg.querySelectorAll(".gn").forEach(g=>{const i=g.dataset.id;g.classList.toggle("sel",on&&i===id);g.classList.toggle("up",up.has(i));g.classList.toggle("down",dn.has(i));});
+  svg.querySelectorAll(".ge").forEach(e=>{const s=e.dataset.s,t=e.dataset.t;
+    const isUp=on&&(t===id||up.has(t))&&up.has(s),isDn=on&&(s===id||dn.has(s))&&dn.has(t);
+    e.classList.toggle("up",isUp);e.classList.toggle("down",isDn&&!isUp);});
+}
+function graphSearch(){
+  const svg=$("#gsvg");if(!svg) return;svg.classList.toggle("searching",!!S.q);
+  svg.querySelectorAll(".gn").forEach(g=>g.classList.toggle("match",!!S.q&&matchNode(NODES.get(g.dataset.id))));
+}
+function scrollGraphTo(id){const p=GPOS.get(id);if(!p) return;const v=$("#v-graph"),vx=isAr()?GW-p.x-GNW:p.x;v.scrollTo({left:Math.max(0,vx-v.clientWidth/2),top:Math.max(0,p.y-v.clientHeight/2),behavior:"smooth"});}
+function graphHome(){const v=$("#v-graph");v.scrollLeft=isAr()?v.scrollWidth:0;}
+function showGInfo(id){
+  const n=NODES.get(id),box=$("#ginfo");if(!n){box.style.display="none";return;}
+  const sv=severity(id);
+  box.style.display="block";
+  box.innerHTML=`<div style="display:flex;gap:8px;align-items:center"><i class="dot" style="background:${GROUPS[n.g].color}"></i><b><bdi>${esc(base(id))}</bdi></b>${sevPill(sv)}<span style="margin-inline-start:auto;cursor:pointer" class="dim" id="gx" role="button" title="${t("close")}" aria-label="${t("close")}">✕</span></div>
+   <div class="mono dim" style="font-size:11px;margin:3px 0 6px">${esc(id)}</div><div style="font-size:12px">${esc(nDesc(n))}</div>
+   <div style="display:flex;gap:14px;margin:10px 0;font-size:12px"><span>${t("gi.up",{n:`<b style="color:#38bdf8">${upstreamOf(id).size}</b>`})}</span><span>${t("gi.imp",{n:`<b style="color:#f87171">${impactOf(id).size}</b>`})}</span><span>${t("gi.feat",{n:`<b>${featuresHit(id).length}</b>`})}</span></div>
+   <button class="btn" id="gd">${t("gi.open")}</button> <button class="btn" id="gc2">${t("gi.casc")}</button>`;
+  $("#gx").onclick=()=>{box.style.display="none";S.sel=null;graphHL(null);};
+  $("#gd").onclick=()=>{setView("explorer");select(id);};
+  $("#gc2").onclick=()=>{S.casc=id;setView("cascade");};
+}
+$("#gt").onchange=e=>{S.gTests=e.target.checked;renderGraph();};
+$("#gc").onchange=e=>{S.gContent=e.target.checked;renderGraph();};
+
+/* ───────────────────────────── CASCADE ───────────────────────────── */
+function rankList(){
+  return ALL.filter(n=>n.g!=="asset"&&!(n.g==="config"&&!n.global)).map(n=>({id:n.id,c:n.global?Infinity:impactCount(n.id)})).sort((a,b)=>b.c-a.c||a.id.localeCompare(b.id));
+}
+function renderRank(){
+  const list=rankList().filter(r=>matchNode(NODES.get(r.id))),max=SRC_CORE.length;
+  $("#rank").innerHTML=list.map(r=>{const sv=severity(r.id),pct=r.c===Infinity?100:Math.round(r.c/max*100);
+    return `<div class="ri ${S.casc===r.id?"sel":""}" data-casc="${esc(r.id)}" title="${tip(r.id)}"><div class="top"><i class="dot" style="background:${color(r.id)}"></i><span class="nm"><bdi>${esc(base(r.id))}</bdi></span><span class="fi" style="color:${sv.c}">${r.c===Infinity?t("all"):r.c}</span></div><div class="dim mono" style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.id)}</div><div class="bar"><i style="width:${pct}%;background:${sv.c}"></i></div></div>`;}).join("")||`<div class="empty">${t("nomatch")}</div>`;
+}
+$("#rank").addEventListener("click",e=>{const r=e.target.closest("[data-casc]");if(r){S.casc=r.dataset.casc;renderRank();renderCascade();}});
+function renderCascade(){
+  const id=S.casc,n=NODES.get(id);if(!n){$("#casc").innerHTML="";return;}
+  const {lv,par}=impactFull(id),sv=severity(id),feats=featuresHit(id);
+  const by=new Map();for(const [k,v] of lv){if(!by.has(v)) by.set(v,[]);by.get(v).push(k);}
+  const gi=Object.keys(GROUPS);
+  const card=(x,cls="")=>`<div class="cc ${cls}" data-cc="${esc(x)}" style="border-inline-start-color:${color(x)}" title="${tip(x)}"><div style="min-width:0"><div class="nm"><bdi>${esc(base(x))}</bdi></div><small>${esc(gLabel(NODES.get(x).g))}</small></div></div>`;
+  const cols=[`<div class="ccol"><h5>${t("c.origin")}</h5>${card(id,"origin")}${n.deps.length?`<h5 style="margin-top:14px">${t("c.relies")}</h5>${n.deps.map(x=>chip(x)).join("")}`:""}</div>`];
+  for(const k of [...by.keys()].sort((a,b)=>a-b)){
+    const xs=by.get(k).sort((a,b)=>gi.indexOf(NODES.get(a).g)-gi.indexOf(NODES.get(b).g)||base(a).localeCompare(base(b)));
+    cols.push(`<div class="carr">➜</div><div class="ccol"><h5>${k===1?t("c.direct"):t("c.level",{k})} · ${xs.length}</h5>${xs.map(x=>card(x)).join("")}</div>`);
+  }
+  const grp=new Map();for(const x of lv.keys()){const g=NODES.get(x).g;grp.set(g,(grp.get(g)||0)+1);}
+  const gmax=Math.max(1,...grp.values());
+  $("#casc").innerHTML=`
+   <div class="dhead"><h2><bdi>${esc(base(id))}</bdi></h2>${sevPill(sv)}<span class="mono dim">${esc(id)}</span></div>
+   <p class="muted">${esc(nDesc(n))}</p>
+   ${n.global?`<div class="break"><h4>${t("c.build")}</h4><p style="color:#fecaca">${esc(loc(n.global,n.globalAr))}</p></div>`:""}
+   ${n.rt?`<div class="rt"><b>${t("d.rt")}</b> ${esc(loc(n.rt,n.rtAr))}</div>`:""}
+   ${n.guard?`<div class="guard"><b>${t("d.guard")}</b> ${esc(loc(n.guard,n.guardAr))}</div>`:""}
+   <h3>${t("c.feats",{a:feats.length,b:FEATURES.length})}</h3><div>${feats.map(featChip).join("")||`<span class="dim">${t("c.featsNone")}</span>`}</div>
+   ${!n.global&&lv.size?`<h3>${t("c.chain")}</h3><div class="ccols" id="ccols">${cols.join("")}</div>
+   <h3>${t("c.layers")}</h3><div class="gbars card">${[...grp.entries()].sort((a,b)=>b[1]-a[1]).map(([g,c])=>`<div class="row"><span><i class="dot" style="background:${GROUPS[g].color}"></i> ${esc(gLabel(g))}</span><div class="track"><i style="width:${c/gmax*100}%;background:${GROUPS[g].color}"></i></div><b>${c}</b></div>`).join("")}</div>`
+   :(!n.global?`<div class="card" style="margin-top:14px"><span class="muted">${t("c.nothing")} ${n.g==="test"?t("c.ci"):t("c.local")}</span></div>`:"")}`;
+  const cc=$("#ccols");if(!cc) return;
+  cc.addEventListener("mouseover",e=>{const c=e.target.closest("[data-cc]");if(!c) return;const chain=new Set();let x=c.dataset.cc;while(x&&x!==id){chain.add(x);x=par.get(x);}
+    cc.querySelectorAll("[data-cc]").forEach(el=>el.classList.toggle("chain",chain.has(el.dataset.cc)));});
+  cc.addEventListener("mouseleave",()=>cc.querySelectorAll(".chain").forEach(el=>el.classList.remove("chain")));
+  cc.addEventListener("click",e=>{const c=e.target.closest("[data-cc]");if(c&&c.dataset.cc!==id){S.casc=c.dataset.cc;renderRank();renderCascade();}});
+}
+
+/* ───────────────────────────── WORKFLOWS ───────────────────────────── */
+const wfMatch=w=>qmatch(w.t,w.d,w.ta,w.da,...w.steps.flatMap(st=>[st.t,st.d,st.ta,st.da,...st.f]));
+const stepMatch=st=>!!S.q&&qmatch(st.t,st.d,st.ta,st.da,...st.f);
+function renderWfList(){
+  const list=WORKFLOWS.map((w,i)=>({w,i})).filter(({w})=>wfMatch(w));
+  if(list.length&&!list.some(x=>x.i===S.wf)) S.wf=list[0].i;
+  $("#wlist").innerHTML=`<div style="padding:12px 14px 4px" class="dim">${t("wf.count",{a:list.length,b:WORKFLOWS.length})}</div>`+list.map(({w,i})=>`<div class="wi ${i===S.wf?"sel":""}" data-wf="${i}"><b>${esc(loc(w.t,w.ta))}</b><span>${esc(loc(w.d,w.da))}</span><div class="dim" style="font-size:11px;margin-top:3px">${t("wf.meta",{s:w.steps.length,f:new Set(w.steps.flatMap(s=>s.f)).size})}</div></div>`).join("");
+  renderFlow();
+}
+$("#wlist").addEventListener("click",e=>{const w=e.target.closest("[data-wf]");if(w){S.wf=+w.dataset.wf;renderWfList();}});
+function renderFlow(){
+  const w=WORKFLOWS[S.wf];
+  const files=[...new Set(w.steps.flatMap(s=>s.f))].filter(x=>NODES.has(x));
+  const weakest=files.filter(x=>isSrc(NODES.get(x))).sort((a,b)=>impactCount(b)-impactCount(a)).slice(0,3);
+  const kl=k=>esc(loc(k.l,k.ar));
+  $("#wflow").innerHTML=`<div class="flow"><h2>${esc(loc(w.t,w.ta))}</h2><p class="muted">${esc(loc(w.d,w.da))}</p>
+   <div class="lanes">${Object.values(KINDS).map(k=>`<span class="chip feat"><i class="dot" style="background:${k.c}"></i>${kl(k)}</span>`).join("")}</div>
+   ${w.steps.map((st,i)=>{const k=KINDS[st.k],a=st.a&&loc(st.a,AR_ARROW[st.a]),aCls=isAr()&&AR_ARROW[st.a]?' class="tr"':"";return `<div class="step"><div class="sn" style="border-color:${k.c};color:${k.c}">${i+1}</div><div class="sb ${stepMatch(st)?"hit":""}" style="border-inline-start-color:${k.c}"><div class="sk" style="color:${k.c}">${kl(k)}</div><h4>${esc(loc(st.t,st.ta))}</h4><p class="muted">${esc(loc(st.d,st.da)).replace(/`([^`]+)`/g,'<span class="mono" style="color:#e2e8f0">$1</span>')}</p><div>${st.f.map(x=>chip(x)).join("")}</div></div></div>${i<w.steps.length-1?`<div class="arrow">${a?`<span${aCls}><bdi>${esc(a)}</bdi></span>`:""}</div>`:""}`;}).join("")}
+   <h3>${t("wf.risk")}</h3><div class="card">${weakest.map(x=>`<div style="margin:4px 0">${chip(x)} ${sevPill(severity(x))} <span class="dim">${t("wf.deps",{n:impactCount(x)})}</span></div>`).join("")}</div></div>`;
+}
+
+/* ───────────────────────────── SEARCH & INIT ───────────────────────────── */
+$("#q").addEventListener("input",e=>{
+  S.q=e.target.value.trim().toLowerCase();
+  if(S.view==="overview"&&S.q) setView("explorer");
+  renderTree();graphSearch();renderRank();renderWfList();
+});
+document.addEventListener("keydown",e=>{
+  /* e.code covers the physical "/" key on layouts (e.g. Arabic) where it types another character */
+  const slash=e.key==="/"||(e.code==="Slash"&&!e.shiftKey&&!e.ctrlKey&&!e.altKey&&!e.metaKey);
+  if(slash&&document.activeElement!==$("#q")){e.preventDefault();$("#q").focus();}
+  if(e.key==="Escape"){$("#q").value="";$("#q").dispatchEvent(new Event("input"));$("#q").blur();}
+});
+
+/* ───────────────────────────── LANGUAGE ───────────────────────────── */
+function renderStats(){
+  $("#stats").innerHTML=[[ALL.length,"stat.files"],[SRC_CORE.length,"stat.modules"],[EDGES,"stat.edges"],[CYCLES.length,"stat.cycles"]].map(([v,k])=>`<span class="stat">${t(k,{n:v})}</span>`).join("");
+}
+function applyLang(){
+  const h=document.documentElement;
+  h.lang=S.lang;h.dir=isAr()?"rtl":"ltr";document.title=t("doc.title");
+  document.querySelectorAll("[data-t]").forEach(el=>{el.textContent=t(el.dataset.t);});
+  document.querySelectorAll("[data-th]").forEach(el=>{el.innerHTML=t(el.dataset.th);});
+  document.querySelectorAll("[data-tph]").forEach(el=>{el.placeholder=t(el.dataset.tph);});
+  document.querySelectorAll("[data-taria]").forEach(el=>{el.setAttribute("aria-label",t(el.dataset.taria));});
+  document.querySelectorAll("#lang [data-lang]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.lang===S.lang)));
+}
+function setLang(l){
+  if(l===S.lang||!UI[l]) return;
+  S.lang=l;
+  try{localStorage.setItem(LANG_KEY,l);}catch(e){}
+  applyLang();renderStats();legend($("#lg1"));legend($("#lg2"));
+  renderOverview();renderTree();
+  S.detail?renderDetail(S.detail):renderWelcome();
+  renderRank();if(S.casc) renderCascade();
+  renderWfList();
+  S.gHome=true;
+  if(S.view==="graph") setView("graph"); else renderGraph();
+}
+$("#lang").addEventListener("click",e=>{const b=e.target.closest("[data-lang]");if(b) setLang(b.dataset.lang);});
+
+applyLang();renderStats();
+legend($("#lg1"));legend($("#lg2"));
+renderOverview();renderTree();renderWelcome();renderWfList();
+</script>
+</body>
+</html>

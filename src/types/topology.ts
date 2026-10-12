@@ -1,7 +1,7 @@
 import type { LevelId } from "./level";
-import type { PortState } from "./ledger";
 
 export type DeviceKind = "router" | "pc" | "server" | "iot" | "switch" | "firewall";
+export type PortState = "open" | "closed" | "filtered";
 
 export interface DevicePort {
   number: number;

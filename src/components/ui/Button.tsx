@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes } from "react";
-import { playSfx } from "@/core/audio";
 import { cn } from "@/lib/cn";
 import type { SfxName } from "@/types/audio";
+import { playUiSound } from "./uiSound";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md";
@@ -35,7 +35,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       type={type}
       onClick={(e) => {
-        if (sfx) playSfx(sfx);
+        if (sfx) playUiSound(sfx);
         onClick?.(e);
       }}
       className={cn(

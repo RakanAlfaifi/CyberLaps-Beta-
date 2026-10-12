@@ -3,5 +3,6 @@ dist
 *.local
 *.log
 .DS_Store
+desktop.ini
 .vite
 coverage

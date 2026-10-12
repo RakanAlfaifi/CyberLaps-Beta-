@@ -40,18 +40,42 @@ function toDefinition(file: LevelFile): LevelDefinition {
   };
 }
 
-/** Validated once at startup so a broken level file fails loudly instead of rendering half a map. */
-const LEVELS: ReadonlyMap<LevelId, LevelDefinition> = new Map(
-  LEVEL_FILES.map((raw, index) => {
-    const result = levelFileSchema.safeParse(raw);
-    if (!result.success) {
-      const detail = result.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("; ");
-      throw new Error(`Level file #${index + 1} is invalid: ${detail}`);
+const describeIssues = (issues: readonly { path: (string | number)[]; message: string }[]) =>
+  issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("; ");
+
+/**
+ * Validates raw level files into a registry keyed by level number.
+ *
+ * A file that fails validation (or whose number is already taken) is skipped
+ * with a console warning, so one broken level never stops the app from booting.
+ * It simply does not appear in the level list.
+ *
+ * @param files Raw JSON level files, in load order.
+ * @returns The levels that passed validation.
+ */
+export function buildLevelRegistry(files: readonly unknown[]): ReadonlyMap<LevelId, LevelDefinition> {
+  const levels = new Map<LevelId, LevelDefinition>();
+  files.forEach((raw, index) => {
+    try {
+      const result = levelFileSchema.safeParse(raw);
+      if (!result.success) {
+        console.warn(`[levels] Skipping level file #${index + 1}: ${describeIssues(result.error.issues)}`);
+        return;
+      }
+      const level = toDefinition(result.data);
+      if (levels.has(level.id)) {
+        console.warn(`[levels] Skipping level file #${index + 1}: level ${level.id} is already defined`);
+        return;
+      }
+      levels.set(level.id, level);
+    } catch (error) {
+      console.warn(`[levels] Skipping level file #${index + 1}: failed to load`, error);
     }
-    const level = toDefinition(result.data);
-    return [level.id, level] as const;
-  }),
-);
+  });
+  return levels;
+}
+
+const LEVELS = buildLevelRegistry(LEVEL_FILES);
 
 export function getLevelDefinition(id: LevelId): LevelDefinition | undefined {
   return LEVELS.get(id);
@@ -68,11 +92,29 @@ export interface ComingSoonLevel {
   summary: string;
 }
 
-const COMING_SOON: readonly ComingSoonLevel[] = comingSoonFileSchema
-  .parse(comingSoon)
-  .levels.map((l) => ({ id: l.number, title: l.title, summary: l.summary }))
-  .filter((l) => !LEVELS.has(l.id))
-  .sort((a, b) => a.id - b.id);
+/**
+ * Validates the Coming Soon file, dropping entries that are already playable.
+ * An invalid file yields an empty list (with a console warning) rather than an error.
+ *
+ * @param raw The raw Coming Soon JSON.
+ * @param playable Registry of playable levels; their numbers are excluded.
+ */
+export function buildComingSoonList(
+  raw: unknown,
+  playable: ReadonlyMap<LevelId, LevelDefinition>,
+): readonly ComingSoonLevel[] {
+  const result = comingSoonFileSchema.safeParse(raw);
+  if (!result.success) {
+    console.warn(`[levels] Ignoring Coming Soon file: ${describeIssues(result.error.issues)}`);
+    return [];
+  }
+  return result.data.levels
+    .map((l) => ({ id: l.number, title: l.title, summary: l.summary }))
+    .filter((l) => !playable.has(l.id))
+    .sort((a, b) => a.id - b.id);
+}
+
+const COMING_SOON = buildComingSoonList(comingSoon, LEVELS);
 
 export function listComingSoonLevels(): readonly ComingSoonLevel[] {
   return COMING_SOON;

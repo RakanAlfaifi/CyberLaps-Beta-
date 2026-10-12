@@ -1,7 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import level01 from "@/content/levels/level-01.json";
+import level02 from "@/content/levels/level-02.json";
 import { PLAYABLE_LEVEL_COUNT } from "@/core/state/progressStore";
-import { getLevelDefinition, listComingSoonLevels, listLevelDefinitions } from "./registry";
+import {
+  buildComingSoonList,
+  buildLevelRegistry,
+  getLevelDefinition,
+  listComingSoonLevels,
+  listLevelDefinitions,
+} from "./registry";
 import { levelFileSchema } from "./schema";
 
 describe("level registry", () => {
@@ -25,6 +32,41 @@ describe("level registry", () => {
     const ids = listComingSoonLevels().map((l) => l.id);
     expect(ids[0]).toBe(PLAYABLE_LEVEL_COUNT + 1);
     expect(ids).toEqual([...ids].sort((a, b) => a - b));
+  });
+});
+
+describe("level registry fault tolerance", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const silenceWarnings = () => vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+  it("skips a malformed level file and keeps the valid ones", () => {
+    const warn = silenceWarnings();
+    const levels = buildLevelRegistry([level01, { title: "broken" }, null, level02]);
+
+    expect([...levels.keys()]).toEqual([1, 2]);
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn.mock.calls[0]?.[0]).toContain("#2");
+  });
+
+  it("keeps the first file when two claim the same level number", () => {
+    const warn = silenceWarnings();
+    const levels = buildLevelRegistry([level01, { ...level01, title: "Duplicate" }]);
+
+    expect(levels.size).toBe(1);
+    expect(levels.get(1)?.title).toBe(level01.title);
+    expect(warn).toHaveBeenCalledOnce();
+  });
+
+  it("returns an empty registry when every file is broken", () => {
+    silenceWarnings();
+    expect(buildLevelRegistry(["not a level", 42]).size).toBe(0);
+  });
+
+  it("falls back to no Coming Soon levels when that file is invalid", () => {
+    const warn = silenceWarnings();
+    expect(buildComingSoonList({ levels: "nope" }, new Map())).toEqual([]);
+    expect(warn).toHaveBeenCalledOnce();
   });
 });
 

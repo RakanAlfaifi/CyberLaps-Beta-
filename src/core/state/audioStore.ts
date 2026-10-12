@@ -1,15 +1,10 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { getBrowserStorage, storageKey } from "@/core/persistence/storage";
+import { DEFAULT_AUDIO_SETTINGS } from "@/core/audio/defaults";
 import type { AudioSettings } from "@/types/audio";
 
-export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
-  muted: false,
-  musicEnabled: true,
-  masterVolume: 0.8,
-  musicVolume: 0.35,
-  sfxVolume: 0.6,
-};
+export { DEFAULT_AUDIO_SETTINGS };
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
